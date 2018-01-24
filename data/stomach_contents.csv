@@ -1,4 +1,4 @@
-Species,Lake,Length ,Weight,St.weight
+species,lake,length,weight,st_weight
 SGR,MO.river,240,100,1.025
 SGR,MO.river,250,100,0.022
 SGR,MO.river,275,150,4.423
