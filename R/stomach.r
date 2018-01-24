@@ -44,18 +44,23 @@ wae %>%
 sink("output/normality_tests_wae.log")
 shapiro.test(wae$rel_weight)
 
+print("for substock")
 wae %>% 
   filter(psd == "substock") %>%
   kruskal.test(rel_weight~rel_weight_empty, data = .)
+print("for S-Q")
 wae %>%
   filter(psd=="S-Q") %>%
   kruskal.test(rel_weight~rel_weight_empty, data = .)
+print("for Q-P")
 wae %>%
   filter(psd=="Q-P") %>%
   kruskal.test(rel_weight~rel_weight_empty, data = .)
+print("for P-M")
 wae %>% 
   filter(psd=="P-M") %>%
   kruskal.test(rel_weight~rel_weight_empty, data = .)
+print("for M-T")
 wae %>%
   filter(psd == "M-T") %>%
   kruskal.test(rel_weight~rel_weight_empty, data = .)
@@ -87,16 +92,19 @@ sink()
 #summary(mod.1)
 #  1-(deviance(mod.1)/((length(x.1)-1)*var(y.1)))
 
-vol <- 1.05*st_weight
-wae <- cbind(wae, vol)
+#Calculate maximum stomach volume of fish
+wae <- 
+  wae %>%
+  mutate(vol = 1.05*st_weight, 
+         length_class_50 = length %>% round_down(50))
 
-tapply(vol, cls.5, max)
+tapply(wae$vol, wae$length_class_50, max)
 
 x <- c(125,175,225,275,325,375,425,475,525,575,625,675,725)
 y <- c(1.087170,1.790775,6.394500,2.877000,18.893700,25.473000,33.064500,27.594000,22.123500,24.209325,84.530250,156.310350,136.920000)
 plot(y~x, pch=19, ylab="Maximum stomach contents (ml)", xlab="length class (50 mm)", 
      ylim=c(0,200), xlim=c(100, 800),yaxs="i", xaxs="i", las=1, bty="n")
-max.vol <- nls(y~a*x^b, start=list(a=0.00000001, b=3.35), trace=T, )
+max.vol <- nls(y~a*x^b, start=list(a=0.00000001, b=3.35), trace=T)
 mod <- seq(min(length), 800, 0.01)
 lines(mod, predict(max.vol, list(x = mod)))   
 text(350, 150, expression(V==1.464e-10*(length)^4.20))
