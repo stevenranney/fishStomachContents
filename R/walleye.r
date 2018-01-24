@@ -1,62 +1,65 @@
-  stomach <- read.table("C:/Users/Steven Harris Ranney/Desktop/Manuscripts/Wr and Stomach Contents/data/stomach.txt", header=T)
-  attach(stomach)
-  names(stomach)
 
-  wae <- stomach[Species=="WAE",]
-  attach(wae)
-  detach(stomach)
+library(dplyr)
+library(ggplot2)
 
-  wae$Lake <- as.factor(wae$Lake)
+source("R/helper_functions.R")
 
-  #Calculate Wr from Murphy et al. 1990
-  Wr <- (Weight/(10^(-5.453+3.18*(log10(Length)))))*100
-  wae <- cbind(wae, Wr)
+stomach <- 
+  read.csv("data/stomach_contents.csv", header=T) %>%
+  filter(species %in% c("WAE", "SMB"))
 
-  #Calculate Wr-stomach contents from Murphy et al. 1990
-  WrE <- ((Weight-St.weight)/(10^(-5.453+3.18*(log10(Length)))))*100
-  wae <- cbind(wae, WrE)
 
-  #Assign PSD values
-  psd <- with(wae,
-              ifelse((Length>=250)&(Length<380), "S-Q",
-              ifelse((Length>=380)&(Length<510), "Q-P",
-              ifelse((Length>=510)&(Length<630), "P-M",
-              ifelse((Length>=630)&(Length<760), "M-T",
-              ifelse(Length>=760, "M-T",
-              "Substock"))))))
-  wae <- cbind(psd, wae)
 
-  #Convert stomach contents weigh to volume
-  vol <- 1.05*St.weight
-  wae <- cbind(wae, vol)
+################################################################################
+#For Walleye data
+wae <- 
+  stomach %>%
+  filter(species=="WAE")
 
-  ### Max volume and length by length category and population
-  waeo <- wae[order(wae$Lake, wae$psd, wae$vol), ]
-  wae.vol.length <- aggregate(waeo[c("Weight", "Length", "vol")], waeo[c("Lake", "psd")], tail, 1)
-  #wae.vol.length <- read.table("wae.vol.length.txt")
+wae <- 
+  wae %>%
+  mutate(rel_weight = calc_wae_wr(weight, length), 
+         rel_weight_empty = (weight - st_weight) %>% calc_wae_wr(length), 
+         psd = ifelse((length>=250)&(length<380), "S-Q",
+                      ifelse((length>=380)&(length<510), "Q-P",
+                             ifelse((length>=510)&(length<630), "P-M",
+                                    ifelse((length>=630)&(length<760), "M-T",
+                                           ifelse(length>=760, ">T", "substock"))))), 
+         psd = psd %>% factor(levels = c("substock", 
+                                         "S-Q", 
+                                         "Q-P", 
+                                         "P-M", 
+                                         "M-T", 
+                                         ">T")), 
+         length_class = length %>% round_down() + 5, 
+         lake = lake %>% as.factor(), 
+         vol = 1.05 * st_weight)
 
-  #max.vol.q <- nlrq(vol~a*Length^b, data=wae.vol.length, start=list(a=0.0000005, b=3.1), tau=0.75, trace=TRUE,
-  #                   control=nls.control(maxiter=10000))
+max_vol <- 
+  wae %>% 
+  group_by(lake, psd) %>%
+  filter(vol == max(vol)) %>%
+  filter(vol > 0)
 
-  #nonLinear regression of estimated stomach volume as a function of length
-  max.vol.nls <- nls(vol~a*Length^b, data=wae.vol.length, start=list(a=0.00000005, b=3.0), trace=TRUE,
-                     control=nls.control(maxiter=10000))
+max_vol_nls <- 
+  max_vol %>% 
+  nls(vol~a*length^b, data = ., start=list(a=0.00000005, b=3.0), trace=TRUE,
+      control=nls.control(maxiter=10000))
 
-  with(wae.vol.length,
-       plot(vol~Length, pch=19, ylab="Maximum stomach contents (ml)", xlab="Total length (mm)",
-            ylim=c(0,200), xlim=c(200,700),yaxs="i", xaxs="i", las=1, bty="n"))
-       mod <- seq(min(Length), max(Length), 0.01)
-    #  lines(mod, predict(max.vol.q, list(Length = mod)))     
-      lines(mod, predict(max.vol.nls, list(Length = mod)), lty=2)
-  #    abline(v=250, lty=2)
-  #    abline(v=380, lty=2)
-  #    abline(v=510, lty=2)
-  #    abline(v=630, lty=2)
-  #  legend(225, 190, legend=c(expression(paste(3^rd, " Quantile")), "Nonlinear Least Squares"), lty=c(1,2))
-  #  legend(225, 190, legend=c(expression(italic(Q[3])), "NLS"), lty=c(1,2))
-    text(300, 190, label="B", cex=2)
-  
-  R2(wae.vol.length$Length, wae.vol.length$vol, max.vol.nls)
+max_vol %>%
+  ungroup() %>%
+  filter(vol > 0) %>%
+  ggplot(aes(x = length, y = vol)) +
+  geom_point() + 
+  geom_smooth(method = "nls", 
+              formula = y ~ a * x^b, 
+              se = FALSE, 
+              method.args = list(start = list(a = 0.00000005, b = 3.0), 
+                                 trace = TRUE, 
+                                 control = nls.control(maxiter = 10000))) +
+  labs(x = "Total length (mm)", y = "Maximum stomach contents (ml)")
+
+R2(wae.vol.length$Length, wae.vol.length$vol, max.vol.nls)
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------

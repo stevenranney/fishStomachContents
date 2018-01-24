@@ -13,3 +13,5 @@ round_down <- function(x,to=10)
 {
   to*(x %/% to)
 }
+
+# Calculate R^2 from a non-linear model
