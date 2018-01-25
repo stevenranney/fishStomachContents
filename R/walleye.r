@@ -59,7 +59,10 @@ max_vol %>%
                                  trace = TRUE, 
                                  control = nls.control(maxiter = 10000)), 
               colour = "black") +
-  labs(x = "Total length (mm)", y = "Maximum stomach contents (ml)")
+  labs(x = "Total length (mm)", y = "Maximum stomach contents (ml)") +
+  ggtitle("nls of maximum stomach volume by length category")
+
+ggsave(paste0("output/", Sys.Date(), "_max_vol_regression.png"))
 
 #Sink normality tests to a log file
 sink(paste0("output/", Sys.Date(), "_output.log"))
@@ -93,22 +96,36 @@ wae %>%
   ggplot(aes(x = length, y = vol)) +
   geom_point() + 
   geom_line(aes(x = length, y = mod_95_predict)) +
-  labs(x = "Total length (mm)", y = "Maximum stomach contents (ml; from quantile regression)")
+  labs(x = "Total length (mm)", y = "Stomach contents (ml)") +
+  ggtitle("95th Quantile regresion")
+
+ggsave(paste0("output/", Sys.Date(), "_95th_vol_nlrq_regression.png"))
 
 
 #Estimate maximum stomach contents weight
-wae$maxStWeight <- coef(quantMod95)[1]*wae$deltaWeight^coef(quantMod95)[2]
-
-wae$WrMax <- (((wae$Weight-wae$St.weight)+wae$maxStWeight)/(10^(-5.453+3.18*(log10(wae$Length)))))*100
+wae <- 
+  wae %>%
+  mutate(max_st_weight_rq = (coef(mod_95)[1]*wae$length^coef(mod_95)[2])/1.05, 
+         max_st_weight_nls = (coef(max_vol_nls)[1]*wae$length^coef(max_vol_nls)[2])/1.05,
+         rel_weight_max_rq = calc_wae_wr((wae$weight_empty + wae$max_st_weight_rq), wae$length), 
+         rel_weight_max_nls = calc_wae_wr((wae$weight_empty + wae$max_st_weight_nls), wae$length))
 
 #t-test for significant differences between Wr, WrE, and WrMax
 #NOT FINISHED
-t.test(wae$Wr, wae$WrE)
-t.test(wae$WrE, wae$WrMax)
-t.test(wae$Wr, wae$WrMax)
+t.test(wae$rel_weight, wae$rel_weight_empty)
+t.test(wae$rel_weight_empty, wae$WrMax)
+t.test(wae$rel_weight_empty, wae$WrMax)
+t.test(wae$rel_weight, wae$rel_weight_max_rq)
+t.test(wae$rel_weight, wae$rel_weight_max_nls)
 
-Wr0 <- lm(wae$Wr[wae$psd == "0"]~wae$Lake[wae$psd == "0"])
-plot(wae$Wr[wae$psd == "0"]~wae$Lake[wae$psd == "0"])
+
+
+wae %>%
+  group_by(psd) %>%
+  lm(rel_weight~lake, data = .) %>%
+
+Wr0 <- lm(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
+plot(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
 summary(Wr0)
 TukeyHSD(aov(Wr0))
 
@@ -152,8 +169,11 @@ for(i in 1:length(unique(wae$psd))){
 }
 
 normTest <- as.data.frame(matrix(normTest, ncol=3, nrow=30, byrow = TRUE))
+
 #  aggregate(wae$Wr, by=list(wae$psd, wae$Lake), values)
+
 normTest <- normTest[order(normTest[2], normTest[1]), ]
+
 
 #Another method to calculate Coeffecient of determination
 #SST <- sum((wae.vol.length$vol-mean(predict(max.vol)))^2)
@@ -161,30 +181,22 @@ normTest <- normTest[order(normTest[2], normTest[1]), ]
 #1-(SSE/SST)
 
 
-#Calculate maximum stomach weight of individual fish
-max.st.weight <- (2.200e-10*Length^4.121)/1.05
-wae <- cbind(wae, max.st.weight)
-
-#Calculate Wr.max of individual fish (i.e., total weight minus stomach weight
-#plus estimated maximum stomach weight)
-Wr.max <- ((Weight-St.weight+max.st.weight)/(10^(-5.453+3.18*(log10(Length))))*100)
-wae <- cbind(wae, Wr.max)
 
 #Percent difference between Wr and WrS
 ((tapply(WrE, psd, median)-tapply(Wr, psd, median))/tapply(Wr, psd, median))*100
 
-#Function to determine sample size
-values=function(x)
-  {
-  return(sum(!is.na(x)))
-  }
-tapply(Wr, psd, values)
+#Sample sizes
+tapply(wae$rel_weight, wae$psd, FUN = function(x) sum(!is.na(x)))
 
-shapiro.test(Wr)
+shapiro.test(wae$rel_weight)
 
-with(wae[psd=="0",],
-  wilcox.test(Wr, y=WrE))
-with(wae[psd=="1",],
+wae %>%
+  group_by(psd) %>%
+  wilcox.test(rel_weight~rel_weight_empty, data = .)
+
+
+
+74with(wae[psd=="1",],
   wilcox.test(Wr, y=WrE))
 with(wae[psd=="2",],
   wilcox.test(Wr, y=WrE))

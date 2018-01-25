@@ -1,5 +1,5 @@
 
-#Walleye standard weight (Ws) equation
+#Calculate Walleye relative weight with standard weight (Ws) equation
 
 calc_wae_wr <- function(weight, length){
   
