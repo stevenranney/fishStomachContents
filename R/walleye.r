@@ -201,43 +201,33 @@ wae %>%
 #Barplot of the whole shebang!
 #Adjusted to reflect MEDIANS and quartiles instead of MEAN and 95% CI
 
-z.wae <- matrix(c(tapply(Wr, psd, median),
-                tapply(WrE, psd, median),
-                tapply(Wr.max, psd, median)),
-                nrow=3, ncol=5, byrow=T, dimnames=list(c("Wr", "WrE", "WrMAX"), c("0","1","2","3","4")))
+err_bars <- 
+  wae %>%
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = c("rel_weight", "rel_weight_empty", 
+                        "rel_weight_max_rq", "rel_weight_max_nls")) %>%
+  group_by(psd, variable) %>%
+  mutate(upper_quart = quantile(value, 0.75), 
+         lower_quart = quantile(value, 0.25), 
+         upper_conf = mean(value) + (1.96 * (sd(value))), 
+         lower_conf = mean(value) - (1.96 * (sd(value))))
 
-barplot(z.wae, beside=T, space=c(0,1), ylim=c(85,110), xlab="Length Category", axis.lty=1, ylab=expression(paste("Relative weight   ", (italic(W[r])))),
-        legend=F, xpd=F, names.arg=c("Substock","S-Q","Q-P","P-M","M-T"))#, density=c(0,0,6), angle=c(0,0,45), col="black")
-abline(h=85)
-legend(0.5,111, legend=c(expression(italic(W[r]), italic(W[r])[E], italic(W[r])[MAX])), fill=gray.colors(3), bty="n", cex=2)
 
-#Generate matrices of upper and lower CI bars
-z.ci.u <- matrix(c(tapply(Wr, psd, median)+((tapply(Wr, psd, sd)/sqrt(tapply(Wr, psd, values)))),
-                   tapply(WrE, psd, median)+((tapply(WrE, psd, sd)/sqrt(tapply(WrE, psd, values)))),
-                   tapply(Wr.max, psd, median)+((tapply(Wr.max, psd, sd)/sqrt(tapply(Wr.max, psd, values))))),
-                   nrow=3, ncol=5, byrow=T, dimnames=list(c("Wr", "WrE", "WrMAX"), c("0","1","2","3","4"))
-                 )
-z.ci.l <- matrix(c(tapply(Wr, psd, median)-((tapply(Wr, psd, sd)/sqrt(tapply(Wr, psd, values)))),
-                   tapply(WrE, psd, median)-((tapply(WrE, psd, sd)/sqrt(tapply(WrE, psd, values)))),
-                   tapply(Wr.max, psd, median)-((tapply(Wr.max, psd, sd)/sqrt(tapply(Wr.max, psd, values))))),
-                   nrow=3, ncol=5, byrow=T, dimnames=list(c("Wr", "WrE", "WrMAX"), c("0","1","2","3","4"))
-                )
-
-#matrices of 25th and 75th percentile
-z.q.l.wae <- matrix(c(quantile(Wr[psd==0], 0.25, na.rm=T), quantile(Wr[psd==1], 0.25, na.rm=T), quantile(Wr[psd==2], 0.25, na.rm=T), quantile(Wr[psd==3], 0.25, na.rm=T), quantile(Wr[psd==4], 0.25, na.rm=T),
-                    quantile(WrE[psd==0], 0.25, na.rm=T), quantile(WrE[psd==1], 0.25, na.rm=T), quantile(WrE[psd==2], 0.25, na.rm=T), quantile(WrE[psd==3], 0.25, na.rm=T), quantile(WrE[psd==4], 0.25, na.rm=T),
-                    quantile(Wr.max[psd==0], 0.25, na.rm=T), quantile(Wr.max[psd==1], 0.25, na.rm=T), quantile(Wr.max[psd==2], 0.25, na.rm=T), quantile(Wr.max[psd==3], 0.25, na.rm=T), quantile(Wr.max[psd==4], 0.25, na.rm=T)),
-                    nrow=3, ncol=5, byrow=T, dimnames=list(c("Wr", "WrE", "WrMAX"), c("0","1","2","3","4"))
-                   )
-
-z.q.u.wae <- matrix(c(quantile(Wr[psd==0], 0.75, na.rm=T), quantile(Wr[psd==1], 0.75, na.rm=T), quantile(Wr[psd==2], 0.75, na.rm=T), quantile(Wr[psd==3], 0.75, na.rm=T), quantile(Wr[psd==4], 0.75, na.rm=T),
-                    quantile(WrE[psd==0], 0.75, na.rm=T), quantile(WrE[psd==1], 0.75, na.rm=T), quantile(WrE[psd==2], 0.75, na.rm=T), quantile(WrE[psd==3], 0.75, na.rm=T), quantile(WrE[psd==4], 0.75, na.rm=T),
-                    quantile(Wr.max[psd==0], 0.75, na.rm=T), quantile(Wr.max[psd==1], 0.75, na.rm=T), quantile(Wr.max[psd==2], 0.75, na.rm=T), quantile(Wr.max[psd==3], 0.75, na.rm=T), quantile(Wr.max[psd==4], 0.75, na.rm=T)),
-                    nrow=3, ncol=5, byrow=T, dimnames=list(c("Wr", "WrE", "WrMAX"), c("0","1","2","3","4"))
-                    )
-
-errbar((c(1.5:3.5, 5.5:7.5, 9.5:11.5, 13.5:15.5, 17.5:19.5)),
-        z.wae,
-        z.q.u.wae,
-        z.q.l.wae,
-        add=T, pch=" ")
+wae %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = c("rel_weight", "rel_weight_empty", 
+                        "rel_weight_max_rq", "rel_weight_max_nls")) %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  stat_summary(fun.y = "median", geom = "bar", position = "dodge") +
+  geom_errorbar(data = err_bars,
+                aes(x = psd, ymin = lower_quart, ymax = upper_quart),
+                position = "dodge") +
+  coord_cartesian(ylim = c(80, 110)) +
+  scale_fill_manual(name = "Relative weight value", 
+                    values = gray.colors(5) %>% rev, 
+                    labels = c("Wr", "WrE", "WrMaxQ", "WrMaxNLS")) +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(x = "Length category", y = "Relative weight")
