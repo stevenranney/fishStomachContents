@@ -2,8 +2,11 @@
 library(dplyr)
 library(ggplot2)
 library(quantreg)
+library(reshape2)
 
 source("R/helper_functions.R")
+
+daily_log <- paste0("output/", Sys.Date(), "_output.log")
 
 stomach <- 
   read.csv("data/stomach_contents.csv", header=T) %>%
@@ -63,7 +66,7 @@ max_vol %>%
 ggsave(paste0("output/", Sys.Date(), "_max_vol_regression.png"))
 
 #Sink normality tests to a log file
-sink(paste0("output/", Sys.Date(), "_output.log"))
+sink(daily_log)
 print(paste0("R^2 for non-linear model of max stomach contents~total length of WAE = ", 
              R2(max_vol$length, max_vol$vol, max_vol_nls)))
 sink(type = "message")
@@ -86,7 +89,11 @@ wae <-
   wae %>%
   mutate(mod_95_predict = predict(mod_95))
 
-R2(wae$length, wae$vol, mod_95)
+sink(daily_log)
+print(paste0("R2 value of 95th quartile regression of stomach contents~total length of WAE = ", 
+             R2(wae$length, wae$vol, mod_95)))
+sink(type = "message")
+sink()
 
 wae %>%
   ungroup() %>%
@@ -105,27 +112,15 @@ wae <-
   wae %>%
   mutate(max_st_weight_rq = (coef(mod_95)[1]*wae$length^coef(mod_95)[2])/1.05, 
          max_st_weight_nls = (coef(max_vol_nls)[1]*wae$length^coef(max_vol_nls)[2])/1.05,
-         rel_weight_max_rq = calc_wae_wr((wae$weight_empty + wae$max_st_weight_rq), wae$length), 
-         rel_weight_max_nls = calc_wae_wr((wae$weight_empty + wae$max_st_weight_nls), wae$length))
+         rel_weight_max_rq = calc_wae_wr((weight_empty + max_st_weight_rq), length), 
+         rel_weight_max_nls = calc_wae_wr((weight_empty + max_st_weight_nls), length))
 
-sink(paste0("output/", Sys.Date(), "_output.log"), append = TRUE)
+sink(daily_log, append = TRUE)
 #t-test for significant differences between Wr, WrE, and WrMax
-#NOT FINISHED
 t.test(wae$rel_weight, wae$rel_weight_empty)
-t.test(wae$rel_weight_empty, wae$WrMax)
-t.test(wae$rel_weight_empty, wae$WrMax)
-t.test(wae$rel_weight, wae$rel_weight_max_rq)
+t.test(wae$rel_weight_empty, wae$rel_weight_max_nls)
 t.test(wae$rel_weight, wae$rel_weight_max_nls)
-sink(type = "message")
-sink()
 
-
-
-wae %>%
-  group_by(psd) %>%
-  lm(rel_weight~lake, data = .) %>% summary()
-
-sink(paste0("output/", Sys.Date(), "_output.log"), append = TRUE)
 print("substock")
 Wr0 <- lm(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
 plot(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
@@ -167,29 +162,43 @@ normality_tests <-
             sample_sizes = sum(!is.na(rel_weight))) %>%
   arrange(lake, psd)
 
+sink(daily_log, append = T)
+print(paste0("Are any length category-lake combinations non-normal based upon p-value from Shapiro.Test?\n\nAnswer: ", 
+             any(normality_tests$shapiro_test_pvalue < 0.05)))
+
+print("Wilcox test (non-parametric t-tests) comparing Wr to WrE, WrE to WrMax, and Wr to WrMax")
 wae %>%
   group_by(psd) %>%
   summarise(mw_wr_wre = (wilcox.test(rel_weight, y = rel_weight_empty)$p.value), 
             mw_wre_wrm = (wilcox.test(rel_weight_empty, y = rel_weight_max_nls)$p.value), 
             mw_wr_wrm = (wilcox.test(rel_weight, y = rel_weight_max_nls)$p.value))
 
-#Percent difference between WrE and Wr.max
-((tapply(WrE, psd, median)-tapply(Wr.max, psd, median))/tapply(Wr.max, psd, median))*100
+print("Percent difference between WrE and Wr.max")
+wae %>%
+  group_by(psd) %>%
+  summarise(perc_diff_wre_wrm = ((median(rel_weight_empty) - median(rel_weight_max_nls))/median(rel_weight_max_nls))*100)
 
-#Percent difference between Wr and Wr.max
-((tapply(Wr, psd, median)-tapply(Wr.max, psd, median))/tapply(Wr.max, psd, median))*100
 
+print("Percent difference between Wr and Wr.max")
+wae %>%
+  group_by(psd) %>%
+  summarise(perc_diff_wre_wrm = ((median(rel_weight) - median(rel_weight_max_nls))/median(rel_weight_max_nls))*100)
+
+sink(type = "message")
+sink()
 
 ###############################################################################################
 #Barplot of the whole shebang!
 #Adjusted to reflect MEDIANS and quartiles instead of MEAN and 95% CI
 
+measure_vars <- c("rel_weight", "rel_weight_empty", 
+                  "rel_weight_max_nls")#, "rel_weight_max_rq")
+
 err_bars <- 
   wae %>%
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = c("rel_weight", "rel_weight_empty", 
-                        "rel_weight_max_rq", "rel_weight_max_nls")) %>%
+       measure.vars = measure_vars) %>%
   group_by(psd, variable) %>%
   mutate(upper_quart = quantile(value, 0.75, type = 6), 
          lower_quart = quantile(value, 0.25, type = 6), 
@@ -200,20 +209,21 @@ err_bars <-
 wae %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = c("rel_weight", "rel_weight_empty", 
-                        "rel_weight_max_rq", "rel_weight_max_nls")) %>%
+       measure.vars = measure_vars) %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
   stat_summary(fun.y = "median", geom = "bar", position = "dodge") +
   geom_errorbar(data = err_bars,
                 aes(x = psd, ymin = lower_quart, ymax = upper_quart),
                 position = "dodge") +
   coord_cartesian(ylim = c(80, 110)) +
-  scale_fill_grey(name = "Relative weight value", 
+  scale_fill_grey(name = "Relative weight calculation", 
                   #values = gray.colors(5) %>% rev, 
                   labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMaxQ]), expression(W[rMaxNLS]))) +
+                             expression(W[rMax]))) + #, expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom", 
         panel.border = element_blank(), 
         axis.line = element_line(color = 'black')) +
   labs(x = "Length category", y = "Relative weight value")
+
+ggsave(paste0("output/", Sys.Date(), "_walleye_fig.png"))
