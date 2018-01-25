@@ -9,8 +9,6 @@ stomach <-
   read.csv("data/stomach_contents.csv", header=T) %>%
   filter(species %in% c("WAE", "SMB"))
 
-
-
 ################################################################################
 #For Walleye data
 wae <- 
@@ -169,26 +167,11 @@ normality_tests <-
             sample_sizes = sum(!is.na(rel_weight))) %>%
   arrange(lake, psd)
 
-
-# #Percent difference between Wr and WrS
-# ((tapply(WrE, psd, median)-tapply(Wr, psd, median))/tapply(Wr, psd, median))*100
-# 
-# #Sample sizes
-# tapply(wae$rel_weight, wae$psd, FUN = function(x) sum(!is.na(x)))
-# 
-# shapiro.test(wae$rel_weight)
-# 
-# wae %>%
-#   group_by(psd) %>%
-#   wilcox.test(rel_weight~rel_weight_empty, data = .)
-
 wae %>%
   group_by(psd) %>%
   summarise(mw_wr_wre = (wilcox.test(rel_weight, y = rel_weight_empty)$p.value), 
             mw_wre_wrm = (wilcox.test(rel_weight_empty, y = rel_weight_max_nls)$p.value), 
             mw_wr_wrm = (wilcox.test(rel_weight, y = rel_weight_max_nls)$p.value))
-
-
 
 #Percent difference between WrE and Wr.max
 ((tapply(WrE, psd, median)-tapply(Wr.max, psd, median))/tapply(Wr.max, psd, median))*100
@@ -208,8 +191,8 @@ err_bars <-
        measure.vars = c("rel_weight", "rel_weight_empty", 
                         "rel_weight_max_rq", "rel_weight_max_nls")) %>%
   group_by(psd, variable) %>%
-  mutate(upper_quart = quantile(value, 0.75), 
-         lower_quart = quantile(value, 0.25), 
+  mutate(upper_quart = quantile(value, 0.75, type = 6), 
+         lower_quart = quantile(value, 0.25, type = 6), 
          upper_conf = mean(value) + (1.96 * (sd(value))), 
          lower_conf = mean(value) - (1.96 * (sd(value))))
 
@@ -225,9 +208,12 @@ wae %>%
                 aes(x = psd, ymin = lower_quart, ymax = upper_quart),
                 position = "dodge") +
   coord_cartesian(ylim = c(80, 110)) +
-  scale_fill_manual(name = "Relative weight value", 
-                    values = gray.colors(5) %>% rev, 
-                    labels = c("Wr", "WrE", "WrMaxQ", "WrMaxNLS")) +
+  scale_fill_grey(name = "Relative weight value", 
+                  #values = gray.colors(5) %>% rev, 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMaxQ]), expression(W[rMaxNLS]))) +
   theme_bw() +
-  theme(legend.position = "bottom") +
-  labs(x = "Length category", y = "Relative weight")
+  theme(legend.position = "bottom", 
+        panel.border = element_blank(), 
+        axis.line = element_line(color = 'black')) +
+  labs(x = "Length category", y = "Relative weight value")
