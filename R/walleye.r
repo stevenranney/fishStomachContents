@@ -110,6 +110,7 @@ wae <-
          rel_weight_max_rq = calc_wae_wr((wae$weight_empty + wae$max_st_weight_rq), wae$length), 
          rel_weight_max_nls = calc_wae_wr((wae$weight_empty + wae$max_st_weight_nls), wae$length))
 
+sink(paste0("output/", Sys.Date(), "_output.log"), append = TRUE)
 #t-test for significant differences between Wr, WrE, and WrMax
 #NOT FINISHED
 t.test(wae$rel_weight, wae$rel_weight_empty)
@@ -117,62 +118,55 @@ t.test(wae$rel_weight_empty, wae$WrMax)
 t.test(wae$rel_weight_empty, wae$WrMax)
 t.test(wae$rel_weight, wae$rel_weight_max_rq)
 t.test(wae$rel_weight, wae$rel_weight_max_nls)
+sink(type = "message")
+sink()
 
 
 
 wae %>%
   group_by(psd) %>%
-  lm(rel_weight~lake, data = .) %>%
+  lm(rel_weight~lake, data = .) %>% summary()
 
+sink(paste0("output/", Sys.Date(), "_output.log"), append = TRUE)
+print("substock")
 Wr0 <- lm(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
 plot(wae$rel_weight[wae$psd == "substock"]~wae$lake[wae$psd == "substock"])
 summary(Wr0)
 TukeyHSD(aov(Wr0))
 
-Wr1 <- lm(wae$Wr[wae$psd == "1"]~wae$Lake[wae$psd == "1"])
-plot(wae$Wr[wae$psd == "1"]~wae$Lake[wae$psd == "1"])
+print("S-Q")
+Wr1 <- lm(wae$rel_weight[wae$psd == "S-Q"]~wae$lake[wae$psd == "S-Q"])
+plot(wae$rel_weight[wae$psd == "S-Q"]~wae$lake[wae$psd == "S-Q"])
 summary(Wr1)
 TukeyHSD(aov(Wr1))
 
-Wr2 <- lm(wae$Wr[wae$psd == "2"]~wae$Lake[wae$psd == "2"])
-plot(wae$Wr[wae$psd == "2"]~wae$Lake[wae$psd == "2"])
+print("Q-P")
+Wr2 <- lm(wae$rel_weight[wae$psd == "Q-P"]~wae$lake[wae$psd == "Q-P"])
+plot(wae$rel_weight[wae$psd == "Q-P"]~wae$lake[wae$psd == "Q-P"])
 summary(Wr2)
 TukeyHSD(aov(Wr2))
 
-Wr3 <- lm(wae$Wr[wae$psd == "3"]~wae$Lake[wae$psd == "3"])
-plot(wae$Wr[wae$psd == "3"]~wae$Lake[wae$psd == "3"])
+print("P-M")
+Wr3 <- lm(wae$rel_weight[wae$psd == "P-M"]~wae$lake[wae$psd == "P-M"])
+plot(wae$rel_weight[wae$psd == "P-M"]~wae$lake[wae$psd == "P-M"])
 summary(Wr3)
 TukeyHSD(aov(Wr3))
 
-Wr4 <- lm(wae$Wr[wae$psd == "4"]~wae$Lake[wae$psd == "4"])
-plot(wae$Wr[wae$psd == "4"]~wae$Lake[wae$psd == "4"])
+print("M-T")
+Wr4 <- lm(wae$rel_weight[wae$psd == "M-T"]~wae$lake[wae$psd == "M-T"])
+plot(wae$rel_weight[wae$psd == "M-T"]~wae$lake[wae$psd == "M-T"])
 summary(Wr4)
 TukeyHSD(aov(Wr4))
+sink(type = "message")
+sink()
 
 
 #Test for normality within length category within population for all combinations
-
-normTest <- NULL
-for(i in 1:length(unique(wae$psd))){
-  for(j in 1:length(unique(wae$Lake))){
-      if(values(wae$Wr[wae$psd == unique(wae$psd)[i] & wae$Lake == unique(wae$Lake)[j]]) > 3){
-        tmp <- shapiro.test(wae$Wr[wae$psd == unique(wae$psd)[i] & wae$Lake == unique(wae$Lake)[j]])
-        normTest <- c(normTest, cbind(as.character(unique(wae$psd))[i], 
-                                      as.character(unique(wae$Lake))[j], 
-                                      as.numeric(tmp$p.value)))
-      } else {
-        normTest <- c(normTest, cbind(as.character(unique(wae$psd))[i], 
-                                      as.character(unique(wae$Lake))[j], 
-                                      "NA"))
-      } 
-  }
-}
-
-normTest <- as.data.frame(matrix(normTest, ncol=3, nrow=30, byrow = TRUE))
-
-#  aggregate(wae$Wr, by=list(wae$psd, wae$Lake), values)
-
-normTest <- normTest[order(normTest[2], normTest[1]), ]
+normality_tests <- 
+  wae %>%
+  group_by(psd, lake) %>%
+  summarise(shapiro_test_pvalue = ifelse(length(rel_weight) < 3, NA, (rel_weight %>% shapiro.test())$p.value)) %>%
+  arrange(lake, psd)
 
 
 #Another method to calculate Coeffecient of determination
