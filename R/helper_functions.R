@@ -50,3 +50,11 @@ R2 <- function(x, y, model){
   return(1-(residSS/totalSS))
 
 }
+
+# Calculate R^1 for a fitted quantile regression model; requires the full model and an 
+# intercept-only model
+R1 <- function(q_mod, q_mod_null){
+
+  1 - (q_mod$rho/q_mod_null$rho)
+
+}
