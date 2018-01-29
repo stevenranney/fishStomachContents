@@ -1,6 +1,6 @@
 
 #Calculate Walleye relative weight with standard weight (Ws) equation
-alc_wae_wr <- function(weight, length){
+calc_wae_wr <- function(weight, length){
   
   (weight/(10^(-5.453+3.180*(log10(length)))))*100
 
