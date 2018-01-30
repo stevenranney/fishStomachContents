@@ -113,7 +113,7 @@ stomach %>%
   filter(st_weight == max(st_weight)) %>%
   ggplot(aes(x = weight_empty, y = st_weight)) +
   geom_point() +
-  labs(x = "Weight - stomach contents (g)", y = "Stomach contents weight (g)") +
+  labs(x = "Total weight minus stomach contents (g)", y = "Stomach contents weight (g)") +
   geom_smooth(aes(linetype = "1"), 
               method = "lm",
               se = FALSE,
@@ -137,13 +137,13 @@ ggsave("output/model_figure.png")
 ggsave("output/model_figure.tiff")
 
 
-#Evaluate if within species within population within psd rel_weight values are normally distributed
+# Determine if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(norm_test_pvalue = ifelse(length(rel_weight) > 3, shapiro.test(rel_weight)$p.value, NA)) %>%
-  write.csv(paste0("output/", "sp_lake_psd_norm_test.csv"), row.names = FALSE)
+  write.csv(paste0("output/", "shaprio_test_rel_weight_by_sp_lake_psd.csv"), row.names = FALSE)
 
-#Evaluate if within species within population within psd rel_weight values 
+# Determine if within species within population within psd rel_weight values 
 # are significantly different from rel_weight_empty or rel_weight_max values
 stomach %>% 
   group_by(species, lake, psd) %>% 
@@ -157,38 +157,20 @@ stomach %>%
 
 
 ###############################################################################################
-#Barplot 
-#Adjusted to reflect MEDIANS and quartiles instead of MEAN and 95% CI
+# Boxplot 
 
 measure_vars <- c("rel_weight", "rel_weight_empty", 
                   "rel_weight_max_lm", "rel_weight_max_rq")
-
-err_bars <- 
-  stomach %>%
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  group_by(species, psd, variable) %>%
-  mutate(upper_quart = quantile(value, 0.75, type = 6), 
-         lower_quart = quantile(value, 0.25, type = 6), 
-         upper_conf = mean(value) + (1.96 * (sd(value))), 
-         lower_conf = mean(value) - (1.96 * (sd(value))))
-
 
 stomach %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
        measure.vars = measure_vars) %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.shape = NA) + 
-  # stat_summary(fun.y = "median", geom = "boxplot", position = "dodge") +
-  # geom_errorbar(data = err_bars,
-  #               aes(x = psd, ymin = lower_quart, ymax = upper_quart),
-  #               position = "dodge") +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~species, scales = "free_y", labeller = as_labeller(labels)) +
   coord_cartesian(ylim = c(50, 180)) +
   scale_fill_grey(name = "Relative weight calculation", 
-                  #values = gray.colors(5), 
                   labels = c(expression(W[r]), expression(W[rE]), 
                              expression(W[rMax]), expression(W[rMaxQ]))) +
   theme_bw() +
