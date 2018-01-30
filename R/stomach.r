@@ -49,6 +49,39 @@ max_st_contents_models <-
      rq = rq(st_weight ~ weight_empty, data = ., tau = 0.95), 
      rq_null = rq(st_weight ~ 1, data = ., tau = 0.95)) 
 
+#Write model parameters and goodness of fit values for both models for both species
+data.frame(species = c(rep("SMB", 2), rep("WAE", 2)), 
+           model = c(rep(c("lm", "rq"), 2)), 
+           intercept = c((max_st_contents_models %>% filter(species == "SMB") %>% 
+                            pull(lm) %>% pluck(1) %>% coefficients())[[1]], 
+                         (max_st_contents_models %>% filter(species == "SMB") %>% 
+                              pull(rq) %>% pluck(1) %>% coefficients())[[1]], 
+                         (max_st_contents_models %>% filter(species == "WAE") %>% 
+                            pull(lm) %>% pluck(1) %>% coefficients())[[1]], 
+                         (max_st_contents_models %>% filter(species == "WAE") %>% 
+                            pull(rq) %>% pluck(1) %>% coefficients())[[1]]), 
+           slope = c((max_st_contents_models %>% filter(species == "SMB") %>% 
+                        pull(lm) %>% pluck(1) %>% coefficients())[[2]], 
+                     (max_st_contents_models %>% filter(species == "SMB") %>% 
+                        pull(rq) %>% pluck(1) %>% coefficients())[[2]], 
+                     (max_st_contents_models %>% filter(species == "WAE") %>% 
+                        pull(lm) %>% pluck(1) %>% coefficients())[[2]], 
+                     (max_st_contents_models %>% filter(species == "WAE") %>% 
+                        pull(rq) %>% pluck(1) %>% coefficients())[[2]]),
+           gof = c(rep(c("R2", "R1"), 2)), 
+           value = c((max_st_contents_models %>% filter(species == "SMB") %>% 
+                       pull(lm) %>% pluck(1) %>% summary())$r.squared, 
+                      R1(max_st_contents_models %>% filter(species == "SMB") %>% 
+                           pull(rq) %>% pluck(1), 
+                         max_st_contents_models %>% filter(species == "SMB") %>% 
+                           pull(rq_null) %>% pluck(1)), 
+                     (max_st_contents_models %>% filter(species == "WAE") %>% 
+                        pull(lm) %>% pluck(1) %>% summary())$r.squared, 
+                     R1(max_st_contents_models %>% filter(species == "WAE") %>% 
+                          pull(rq) %>% pluck(1), 
+                        max_st_contents_models %>% filter(species == "WAE") %>% 
+                          pull(rq_null) %>% pluck(1)))) %>%
+  write.csv("output/model_params_and_gof_values.csv", row.names = FALSE)
 
 # Add estimated max weight stomach contents weight to all individuals
 stomach <- 
@@ -101,6 +134,8 @@ stomach %>%
         panel.grid.minor = element_blank())
 
 ggsave("output/model_figure.png")
+ggsave("output/model_figure.tiff")
+
 
 #Evaluate if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
@@ -164,3 +199,5 @@ stomach %>%
   labs(x = "Length category", y = "Relative weight value")
 
 ggsave("output/boxplot_fig.png")
+ggsave("output/boxplot_fig.tiff")
+
