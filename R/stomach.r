@@ -1,4 +1,9 @@
-
+################################################################################
+# Code to accompany the manuscript 
+# The Effect of Stomach Contents on the Relative Weight (Wr) 
+# of Smallmouth Bass and Walleye
+# S. H. Ranney, A. Zale, and J. Syslo, 2018
+################################################################################ 
 
 library(dplyr)
 library(ggplot2)
@@ -15,11 +20,15 @@ stomach <-
   read.csv("data/stomach_contents.csv", header=T) %>%
   filter(species %in% c("SMB", "WAE")) %>%
   mutate(weight_empty = weight - st_weight, 
-         rel_weight = ifelse(species == "SMB", calc_smb_wr(weight, length), calc_wae_wr(weight, length)), 
+         rel_weight = ifelse(species == "SMB", 
+                             calc_smb_wr(weight, length), 
+                             calc_wae_wr(weight, length)), 
          rel_weight_empty = ifelse(species == "SMB", 
                                    weight_empty %>% calc_smb_wr(length),
                                    weight_empty %>% calc_wae_wr(length)), 
-         psd = ifelse(species == "SMB", assign_smb_psd(length), assign_wae_psd(length)), 
+         psd = ifelse(species == "SMB", 
+                      assign_smb_psd(length), 
+                      assign_wae_psd(length)), 
          psd = psd %>% factor(levels = c("Substock", 
                                          "S-Q", 
                                          "Q-P", 
@@ -37,7 +46,36 @@ max_st_contents_models <-
   group_by(species) %>% 
   do(lm = lm(st_weight ~ weight_empty, data = .), 
      rq = rq(st_weight ~ weight_empty, data = ., tau = 0.95), 
-     rq_null = rq(st_weight ~ 1, data = ., tau = 0.95))
+     rq_null = rq(st_weight ~ 1, data = ., tau = 0.95)) 
+
+model_coefs <- 
+  max_st_contents_models %>%
+  select(species) %>%
+  bind_cols(max_st_contents_models %>%
+            summarise(lm_i = coefficients(lm)[[1]], 
+                      lm_s = coefficients(lm)[[2]], 
+                      rq_i = coefficients(rq)[[1]], 
+                      rq_s = coefficients(rq)[[2]]))
+
+# Add estimated max weight stomach contents weight to all individuals
+
+stomach <- 
+  stomach %>%
+  mutate(weight_max_lm = weight_empty + ifelse(species == "SMB", 
+                                               weight_empty %>%
+                                               apply_lm(model_coefs %>% filter(species == "SMB") %>% .$lm_s, 
+                                                        model_coefs %>% filter(species == "SMB") %>% .$lm_i),
+                                               weight_empty %>%
+                                               apply_lm(model_coefs %>% filter(species == "WAE") %>% .$lm_s, 
+                                                        model_coefs %>% filter(species == "WAE") %>% .$lm_i)), 
+         weight_max_rq = weight_empty + ifelse(species == "SMB", 
+                                               weight_empty %>%
+                                                 apply_lm(model_coefs %>% filter(species == "SMB") %>% .$rq_s, 
+                                                          model_coefs %>% filter(species == "SMB") %>% .$rq_i),
+                                               weight_empty %>%
+                                                 apply_lm(model_coefs %>% filter(species == "WAE") %>% .$rq_s, 
+                                                          model_coefs %>% filter(species == "WAE") %>% .$rq_i)))
+
 
 labels <- c("WAE" = "Walleye", 
             "SMB" = "Smallmouth")
@@ -66,20 +104,20 @@ stomach %>%
   theme(legend.position = "bottom", 
         strip.background = element_blank())
 
-ggsave(paste0("output/", Sys.Date(), "_model_figure.png"))
+ggsave(paste0("output/", "model_figure.png"))
 
 #Evaluate if within species within lake within psd rel_weight values are normally distributed
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(norm_test_pvalue = ifelse(length(rel_weight) > 3, shapiro.test(rel_weight)$p.value, NA)) %>%
-  write.csv(paste0("output/", Sys.Date(), "_sp_lake_psd_norm_test.csv"))
+  write.csv(paste0("output/", "sp_lake_psd_norm_test.csv"))
 
 #Evaluate if within species within lake within psd rel_weight values 
 # are significantly different from rel_weight_empty values
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(mw_wr_wre = wilcox.test(rel_weight, y = rel_weight_empty, data = .)$p.value) %>%
-  write.csv(paste0("output/", Sys.Date(), "_mann_whitney_wr_diffs.csv"))
+  write.csv(paste0("output/", "mann_whitney_wr_diffs.csv"))
 
 
 

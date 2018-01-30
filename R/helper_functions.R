@@ -39,6 +39,14 @@ round_down <- function(x,to=10)
   to*(x %/% to)
 }
 
+apply_lm <- function(weight, slope, intercept){
+  
+  slope*weight+intercept
+  
+}
+
+
+
 # Calculate R^2 
 R2 <- function(x, y, model){
 
