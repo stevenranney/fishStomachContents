@@ -39,13 +39,12 @@ round_down <- function(x,to=10)
   to*(x %/% to)
 }
 
-apply_lm <- function(weight, slope, intercept){
+#Simple fx to apply a linear model
+apply_lm <- function(x, model){
   
-  slope*weight+intercept
+  model$coefficients[[2]]*x+model$coefficients[[1]]
   
 }
-
-
 
 # Calculate R^2 
 R2 <- function(x, y, model){
