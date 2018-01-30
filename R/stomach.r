@@ -62,7 +62,7 @@ stomach <-
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(rq) %>% pluck(1)),
                                                weight_empty %>%
-                                                 apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(lm) %>% pluck(1))), 
+                                                 apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(rq) %>% pluck(1))), 
          rel_weight_max_lm = ifelse(species == "SMB", 
                                     weight_max_lm %>% calc_smb_wr(length),
                                     weight_max_lm %>% calc_wae_wr(length)), 
@@ -100,7 +100,7 @@ stomach %>%
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
-ggsave(paste0("output/", "model_figure.png"))
+ggsave("output/model_figure.png")
 
 #Evaluate if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
@@ -153,7 +153,7 @@ stomach %>%
   facet_wrap(~species, scales = "free_y", labeller = as_labeller(labels)) +
   coord_cartesian(ylim = c(50, 180)) +
   scale_fill_grey(name = "Relative weight calculation", 
-                  #values = gray.colors(5) %>% rev, 
+                  #values = gray.colors(5), 
                   labels = c(expression(W[r]), expression(W[rE]), 
                              expression(W[rMax]), expression(W[rMaxQ]))) +
   theme_bw() +
@@ -163,4 +163,4 @@ stomach %>%
         panel.grid.minor = element_blank()) +
   labs(x = "Length category", y = "Relative weight value")
 
-ggsave(paste0("output/", Sys.Date(), "_walleye_fig.png"))
+ggsave("output/boxplot_fig.png")
