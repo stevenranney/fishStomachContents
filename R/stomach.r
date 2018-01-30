@@ -2,42 +2,89 @@
 
 library(dplyr)
 library(ggplot2)
+library(quantreg)
+library(reshape2)
+library(broom)
+library(tidyr)
+
+set.seed(256)
 
 source("R/helper_functions.R")
 
 stomach <- 
   read.csv("data/stomach_contents.csv", header=T) %>%
-  filter(species %in% c("WAE", "SMB"))
-
-
-################################################################################
-#For Walleye data
-wae <- 
-  stomach %>%
-  filter(species=="WAE")
-
-wae <- 
-  wae %>%
-  mutate(rel_weight = calc_wae_wr(weight, length), 
-         rel_weight_empty = (weight - st_weight) %>% calc_wae_wr(length), 
-         psd = ifelse((length>=250)&(length<380), "S-Q",
-                      ifelse((length>=380)&(length<510), "Q-P",
-                             ifelse((length>=510)&(length<630), "P-M",
-                                    ifelse((length>=630)&(length<760), "M-T",
-                                           ifelse(length>=760, ">T", "substock"))))), 
-         psd = psd %>% factor(levels = c("substock", 
+  filter(species %in% c("SMB", "WAE")) %>%
+  mutate(weight_empty = weight - st_weight, 
+         rel_weight = ifelse(species == "SMB", calc_smb_wr(weight, length), calc_wae_wr(weight, length)), 
+         rel_weight_empty = ifelse(species == "SMB", 
+                                   weight_empty %>% calc_smb_wr(length),
+                                   weight_empty %>% calc_wae_wr(length)), 
+         psd = ifelse(species == "SMB", assign_smb_psd(length), assign_wae_psd(length)), 
+         psd = psd %>% factor(levels = c("Substock", 
                                          "S-Q", 
                                          "Q-P", 
                                          "P-M", 
                                          "M-T", 
                                          ">T")), 
-         length_class = length %>% round_down() + 5)
+         length_class = length %>% round_down() + 5, 
+         lake = lake %>% as.factor())
 
-wae %>%
-  ggplot(aes(x = rel_weight)) +
-  geom_histogram(bins = 80, fill = "red", alpha = 0.5) +
-  geom_histogram(aes(x = rel_weight_empty), 
-                 bins = 80, fill = "blue", alpha = 0.5)
+max_st_contents_models <- 
+  stomach %>%
+  filter(st_weight > 0) %>%
+  group_by(species, lake, psd) %>%
+  filter(st_weight == max(st_weight)) %>%
+  group_by(species) %>% 
+  do(lm = lm(st_weight ~ weight_empty, data = .), 
+     rq = rq(st_weight ~ weight_empty, data = ., tau = 0.95), 
+     rq_null = rq(st_weight ~ 1, data = ., tau = 0.95))
+
+labels <- c("WAE" = "Walleye", 
+            "SMB" = "Smallmouth")
+
+stomach %>%
+  filter(st_weight > 0) %>%
+  group_by(species, lake, psd) %>%
+  filter(st_weight == max(st_weight)) %>%
+  ggplot(aes(x = weight_empty, y = st_weight)) +
+  geom_point() +
+  labs(x = "Weight - stomach contents (g)", y = "Stomach contents weight (g)") +
+  geom_smooth(aes(linetype = "1"), 
+              method = "lm",
+              se = FALSE,
+              formula = y ~ x,
+              colour = "black") +
+  geom_smooth(aes(linetype = "2"), 
+              method = "rq",
+              se = FALSE,
+              formula = y ~ x,
+              method.args = list(tau = 0.95), 
+              colour = "black") +
+  facet_wrap(~species, scales = "free", labeller = as_labeller(labels)) +
+  scale_linetype_discrete(name = "Model", labels = c("Linear", expression(95^th ~ "Quantile"))) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        strip.background = element_blank())
+
+ggsave(paste0("output/", Sys.Date(), "_model_figure.png"))
+
+#Evaluate if within species within lake within psd rel_weight values are normally distributed
+stomach %>% 
+  group_by(species, lake, psd) %>% 
+  summarize(norm_test_pvalue = ifelse(length(rel_weight) > 3, shapiro.test(rel_weight)$p.value, NA)) %>%
+  write.csv(paste0("output/", Sys.Date(), "_sp_lake_psd_norm_test.csv"))
+
+#Evaluate if within species within lake within psd rel_weight values 
+# are significantly different from rel_weight_empty values
+stomach %>% 
+  group_by(species, lake, psd) %>% 
+  summarize(mw_wr_wre = wilcox.test(rel_weight, y = rel_weight_empty, data = .)$p.value) %>%
+  write.csv(paste0("output/", Sys.Date(), "_mann_whitney_wr_diffs.csv"))
+
+
+
+
+
 
 
 #Sink normality tests to a log file

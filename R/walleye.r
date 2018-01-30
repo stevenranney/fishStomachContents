@@ -6,6 +6,8 @@ library(reshape2)
 
 source("R/helper_functions.R")
 
+set.seed(256)
+
 daily_log <- paste0("output/", Sys.Date(), "_output.log")
 
 stomach <- 
