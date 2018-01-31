@@ -263,64 +263,11 @@ stomach %>%
   labs(x = "Length category", y = "Relative weight value")
 
 ################################################################################
-
-
-smb <- 
-  stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  filter(species == "SMB") %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
-             drop = TRUE) +
-  coord_cartesian(ylim = c(20, 170)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "none", 
-        axis.text.x = element_text(size = 8), 
-        plot.margin = margin(0, 0, 0, 1, "cm"),
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "", y = "")
-
-
-wae <- 
-  stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  filter(species == "WAE") %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
-             drop = TRUE) +
-#  coord_cartesian(ylim = c(20, 170)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        plot.margin = margin(0, 0, 0, 1, "cm"),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8),
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "", y = "")
-
-library(ggpubr)
-
-ggpubr::ggarrange(smb, wae, nrow = 2,
-                  label.x = "Length category", label.y = "Relative weight value", 
-                  legend = "bottom", common.legend = TRUE)
-
 ################################################################################
 # individual facet_wrap
+# probably a better plotting solution
 
+#SMB
 stomach %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
@@ -335,7 +282,7 @@ stomach %>%
                              expression(W[rMax]), expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom", 
-        plot.margin = margin(0,0.1,0,0, "cm"),
+        plot.margin = margin(0,0.1,0,0.1, "cm"),
         strip.background = element_blank(), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) +
@@ -344,8 +291,7 @@ stomach %>%
 ggsave("output/smallmouth_wr_plot.png")
 ggsave("output/smallmouth_wr_plot.tiff")
 
-
-
+#WAE
 stomach %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
@@ -360,7 +306,7 @@ stomach %>%
                              expression(W[rMax]), expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom",
-        plot.margin = margin(0,0.1,0,0, "cm"),
+        plot.margin = margin(0,0.1,0,0.1, "cm"),
         strip.background = element_blank(), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) +
