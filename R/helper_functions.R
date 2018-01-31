@@ -19,7 +19,7 @@ assign_wae_psd <- function(data){
          ifelse((data>=380)&(data<510), "Q-P",
                 ifelse((data>=510)&(data<630), "P-M",
                        ifelse((data>=630)&(data<760), "M-T",
-                              ifelse(data>=760, ">T", "Substock")))))
+                              ifelse(data>=760, ">T", "SS")))))
 }
 
 assign_smb_psd <- function(data){
@@ -28,7 +28,7 @@ assign_smb_psd <- function(data){
                         ifelse((data>=280)&(data<350), "Q-P",
                                ifelse((data>=350)&(data<430), "P-M",
                                       ifelse((data>=430)&(data<510), "M-T",
-                                             ifelse(data>=510, ">T", "Substock")))))
+                                             ifelse(data>=510, ">T", "SS")))))
 }
 
 

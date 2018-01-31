@@ -31,7 +31,7 @@ stomach <-
          psd = ifelse(species == "SMB", 
                       assign_smb_psd(length), 
                       assign_wae_psd(length)), 
-         psd = psd %>% factor(levels = c("Substock", 
+         psd = psd %>% factor(levels = c("SS", 
                                          "S-Q", 
                                          "Q-P", 
                                          "P-M", 
@@ -106,7 +106,17 @@ stomach <-
 
 
 labels <- c("SMB" = "Smallmouth bass", 
-            "WAE" = "Walleye")
+            "WAE" = "Walleye", 
+            "Clear" = "Clear Lake", 
+            "Enemy.Swim" = "Enemy Swim", 
+            "MO.river" = "MO River", 
+            "Pickerel" = "Pickerel Lake", 
+            "Roy" = "Roy Lake", 
+            "Bitter" = "Bitter Lake", 
+            "Harlan.res" = "Harlan Reservoir", 
+            "Kansas" = "Kansas", 
+            "Pelican" = "Pelican Lake", 
+            "Twin" = "Twin Lakes")
 
 stomach %>%
   filter(st_weight > 0) %>%
@@ -184,4 +194,179 @@ stomach %>%
 
 ggsave("output/boxplot_fig.png")
 ggsave("output/boxplot_fig.tiff")
+
+###############################################################################################
+# Boxplot faceted by species and population
+
+stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  # facet_grid(species ~ lake, scales = "free", labeller = as_labeller(labels), 
+  #            drop = TRUE) +
+  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
+             drop = TRUE) +
+  
+  coord_cartesian(ylim = c(20, 170)) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 5),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Length category", y = "Relative weight value")
+
+# Now with each sp individually?
+stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "SMB") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels)) +
+#  coord_cartesian(ylim = c(40, 170)) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+#        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Length category", y = "Relative weight value")
+
+stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "WAE") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels)) +
+#  coord_cartesian(ylim = c(40, 170)) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        #        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Length category", y = "Relative weight value")
+
+################################################################################
+
+
+smb <- 
+  stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "SMB") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
+             drop = TRUE) +
+  coord_cartesian(ylim = c(20, 170)) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 8), 
+        plot.margin = margin(0, 0, 0, 1, "cm"),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "", y = "")
+
+
+wae <- 
+  stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "WAE") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
+             drop = TRUE) +
+#  coord_cartesian(ylim = c(20, 170)) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 1, "cm"),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "", y = "")
+
+library(ggpubr)
+
+ggpubr::ggarrange(smb, wae, nrow = 2,
+                  label.x = "Length category", label.y = "Relative weight value", 
+                  legend = "bottom", common.legend = TRUE)
+
+################################################################################
+# individual facet_wrap
+
+stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "SMB") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
+             drop = TRUE) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom", 
+        plot.margin = margin(0,0.1,0,0, "cm"),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Length category", y = "Relative weight value")
+
+ggsave("output/smallmouth_wr_plot.png")
+ggsave("output/smallmouth_wr_plot.tiff")
+
+
+
+stomach %>% 
+  filter(psd != ">T") %>%
+  melt(id.vars = c("species", "lake", "psd"), 
+       measure.vars = measure_vars) %>%
+  filter(species == "WAE") %>%
+  ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
+             drop = TRUE) +
+  scale_fill_grey(name = "Relative weight calculation", 
+                  labels = c(expression(W[r]), expression(W[rE]), 
+                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0,0.1,0,0, "cm"),
+        strip.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "Length category", y = "Relative weight value")
+
+ggsave("output/walleye_wr_plot.png")
+ggsave("output/walleye_wr_plot.tiff")
+
 
