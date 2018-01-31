@@ -17,6 +17,7 @@ set.seed(256)
 
 source("R/helper_functions.R")
 
+#Read in and set up dataframe, keeping only rows related to SMB and WAE
 stomach <- 
   read.csv("data/stomach_contents.csv", header=T) %>%
   filter(species %in% c("SMB", "WAE")) %>%
@@ -113,7 +114,8 @@ stomach %>%
   filter(st_weight == max(st_weight)) %>%
   ggplot(aes(x = weight_empty, y = st_weight)) +
   geom_point() +
-  labs(x = "Total weight minus stomach contents (g)", y = "Stomach contents weight (g)") +
+  labs(x = expression("Total weight minus stomach contents (" ~ italic(W)[E] ~ "; g)"), 
+       y = expression("Stomach contents weight (" ~ italic(W)[St] ~ "; g)")) +
   geom_smooth(aes(linetype = "1"), 
               method = "lm",
               se = FALSE,
