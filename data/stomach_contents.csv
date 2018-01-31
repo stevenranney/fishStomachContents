@@ -736,8 +736,6 @@ SMB,Enemy.Swim,441,1437,16.08
 SMB,Enemy.Swim,450,1230,17.71
 SMB,Enemy.Swim,451,1384,19.97
 SMB,Enemy.Swim,461,1558,4.39
-SMB,MO.river,345,800,18.321
-SMB,MO.river,352,700,13.556
 SMB,Pickerel,93,9,0.05
 SMB,Pickerel,95,11,0.19
 SMB,Pickerel,96,12,0.02
