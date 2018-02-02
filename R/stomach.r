@@ -17,6 +17,10 @@ set.seed(256)
 
 source("R/helper_functions.R")
 
+#From Gabelhouse
+wae_length_cat <- c(250, 380, 510, 630, 760)
+smb_length_cat <- c(180, 280, 350, 430, 510)
+
 #Read in and set up dataframe, keeping only rows related to SMB and WAE
 stomach <- 
   read.csv("data/stomach_contents.csv", header=T) %>%
@@ -29,8 +33,8 @@ stomach <-
                                    weight_empty %>% calc_smb_wr(length),
                                    weight_empty %>% calc_wae_wr(length)), 
          psd = ifelse(species == "SMB", 
-                      assign_smb_psd(length), 
-                      assign_wae_psd(length)), 
+                      assign_length_cat(length, smb_length_cat), 
+                      assign_length_cat(length, wae_length_cat)), 
          psd = psd %>% factor(levels = c("SS", 
                                          "S-Q", 
                                          "Q-P", 

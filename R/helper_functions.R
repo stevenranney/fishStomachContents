@@ -13,6 +13,7 @@ calc_smb_wr <- function(weight, length){
   
 }
 
+# Assign walleye length categories
 assign_wae_psd <- function(data){
   
   ifelse((data>=250)&(data<380), "S-Q",
@@ -22,6 +23,7 @@ assign_wae_psd <- function(data){
                               ifelse(data>=760, ">T", "SS")))))
 }
 
+# Assign smb length categories
 assign_smb_psd <- function(data){
   
   ifelse((data>=180)&(data<280), "S-Q",
@@ -30,6 +32,20 @@ assign_smb_psd <- function(data){
                                       ifelse((data>=430)&(data<510), "M-T",
                                              ifelse(data>=510, ">T", "SS")))))
 }
+
+
+# Assign length categories
+assign_length_cat <- function(data, vec){
+  
+  ifelse((data>=vec[1])&(data<vec[2]), "S-Q",
+         ifelse((data>=vec[2])&(data<vec[3]), "Q-P",
+                ifelse((data>=vec[3])&(data<vec[4]), "P-M",
+                       ifelse((data>=vec[4])&(data<vec[5]), "M-T",
+                              ifelse(data>=vec[5], ">T", "SS")))))
+  
+  
+}
+
 
 
 # Helper for assinging length classes
@@ -64,4 +80,10 @@ R1 <- function(q_mod, q_mod_null){
 
   1 - (q_mod$rho/q_mod_null$rho)
 
+}
+
+# Calculate percent difference between to numbers
+calc_perc_diff <- function(x, y){
+  
+  ((x-y)/y)*100
 }
