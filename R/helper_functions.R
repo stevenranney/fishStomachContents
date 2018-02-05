@@ -46,8 +46,6 @@ assign_length_cat <- function(data, vec){
   
 }
 
-
-
 # Helper for assinging length classes
 
 round_down <- function(x,to=10)
@@ -82,7 +80,7 @@ R1 <- function(q_mod, q_mod_null){
 
 }
 
-# Calculate percent difference between to numbers
+# Calculate percent difference between two numbers
 calc_perc_diff <- function(x, y){
   
   ((x-y)/y)*100
