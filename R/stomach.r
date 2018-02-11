@@ -12,6 +12,7 @@ library(reshape2)
 library(broom)
 library(tidyr)
 library(purrr)
+library(scales)
 
 set.seed(256)
 
@@ -144,6 +145,7 @@ stomach %>%
               formula = y ~ x,
               method.args = list(tau = 0.95), 
               colour = "black") +
+  scale_x_continuous(labels = comma) +
   facet_wrap(~species, scales = "free", labeller = as_labeller(labels)) +
   scale_linetype_discrete(name = "Model", labels = c("Linear", expression(95^th ~ "Quantile"))) +
   theme_bw() +
@@ -236,7 +238,6 @@ stomach %>%
        measure.vars = measure_vars) %>%
   filter(species == "WAE") %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
   scale_fill_grey(name = "Relative weight calculation", 
