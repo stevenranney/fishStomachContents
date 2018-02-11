@@ -42,7 +42,10 @@ stomach <-
                                          "M-T", 
                                          ">T")), 
          length_class = length %>% round_down() + 5, 
-         lake = lake %>% as.factor())
+         lake = lake %>% as.factor()) %>%
+  group_by(species, lake, psd) %>%
+  mutate(n = n()) %>%
+  filter(n >= 3) # Remove combinations of species x lake x psd where sample size < 3
 
 max_st_contents_models <- 
   stomach %>%
@@ -200,76 +203,7 @@ ggsave("output/boxplot_fig.png")
 ggsave("output/boxplot_fig.tiff")
 
 ###############################################################################################
-# Boxplot faceted by species and population
-
-stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  # facet_grid(species ~ lake, scales = "free", labeller = as_labeller(labels), 
-  #            drop = TRUE) +
-  facet_grid(species~lake, scales = "free", labeller = as_labeller(labels), 
-             drop = TRUE) +
-  
-  coord_cartesian(ylim = c(20, 170)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "bottom", 
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 5),
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "Length category", y = "Relative weight value")
-
-# Now with each sp individually?
-stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  filter(species == "SMB") %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels)) +
-#  coord_cartesian(ylim = c(40, 170)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "bottom", 
-#        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "Length category", y = "Relative weight value")
-
-stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  filter(species == "WAE") %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  facet_wrap(~lake, scales = "free", labeller = as_labeller(labels)) +
-#  coord_cartesian(ylim = c(40, 170)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "bottom", 
-        #        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "Length category", y = "Relative weight value")
-
-################################################################################
-################################################################################
-# individual facet_wrap
-# probably a better plotting solution
+# Boxplots by species and population
 
 #SMB
 stomach %>% 
