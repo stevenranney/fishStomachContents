@@ -175,6 +175,41 @@ stomach %>%
             mw_wre_wrm_rq = wilcox.test(rel_weight_empty, y = rel_weight_max_rq, data = .)$p.value) %>%
   write.csv(paste0("output/", "mann_whitney_wr_diffs.csv"), row.names = FALSE)
 
+################################################################################
+# summary table with Sample size, wilcox.test, and %diff for all species, lake, psd, Wr comb
+summary_table <- 
+  stomach %>%
+  group_by(species, lake, psd) %>%
+  summarize(n = n(), 
+            wre_wr = wilcox.test(rel_weight_empty, rel_weight)$p.value, 
+            wre_wr_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight)), 
+            wre_wrmax = wilcox.test(rel_weight_empty, rel_weight_max_lm)$p.value, 
+            wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
+            wre_wrmaxQ = wilcox.test(rel_weight_empty, rel_weight_max_rq)$p.value, 
+            wre_wrmaxQ_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq)), 
+            wr_wrmax = wilcox.test(rel_weight, rel_weight_max_lm)$p.value, 
+            wr_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
+            wr_wrmaxQ = wilcox.test(rel_weight, rel_weight_max_rq)$p.value, 
+            wr_wrmaxQ_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)))
+
+summary_table <- 
+  data.frame(summary_table[1:3], 
+             apply(summary_table[4:length(summary_table)], 2, round, 4))
+
+
+summary_table %>%
+  ungroup() %>%
+  filter(species == "SMB") %>%
+  select(-species) %>%
+  t() %>%
+  write.csv("output/summary_table_smb.csv", row.names = F)
+
+summary_table %>%
+  ungroup() %>%
+  filter(species == "WAE") %>%
+  select(-species) %>%
+  t() %>%
+  write.csv("output/summary_table_wae.csv", row.names = F)
 
 
 ###############################################################################################
