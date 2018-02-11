@@ -179,7 +179,7 @@ stomach %>%
 # summary table with Sample size, wilcox.test, and %diff for all species, lake, psd, Wr comb
 summary_table <- 
   stomach %>%
-  group_by(species, lake, psd) %>%
+  group_by(species, psd, lake) %>%
   summarize(n = n(), 
             wre_wr = wilcox.test(rel_weight_empty, rel_weight)$p.value, 
             wre_wr_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight)), 
