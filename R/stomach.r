@@ -43,10 +43,7 @@ stomach <-
                                          "M-T", 
                                          ">T")), 
          length_class = length %>% round_down() + 5, 
-         lake = lake %>% as.factor()) %>%
-  group_by(species, lake, psd) %>%
-  mutate(n = n()) %>%
-  filter(n >= 3) # Remove combinations of species x lake x psd where sample size < 3
+         lake = lake %>% as.factor())
 
 max_st_contents_models <- 
   stomach %>%
@@ -157,6 +154,11 @@ stomach %>%
 ggsave("output/model_figure.png")
 ggsave("output/model_figure.tiff")
 
+stomach <- 
+  stomach %>%
+  group_by(species, lake, psd) %>%
+  mutate(n = n()) %>%
+  filter(n >= 3) # Remove combinations of species x lake x psd where sample size < 3
 
 # Determine if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
@@ -273,6 +275,7 @@ stomach %>%
        measure.vars = measure_vars) %>%
   filter(species == "WAE") %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
+  geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
   scale_fill_grey(name = "Relative weight calculation", 
