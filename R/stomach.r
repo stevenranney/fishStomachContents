@@ -203,7 +203,9 @@ summary_table %>%
   ungroup() %>%
   filter(species == "SMB") %>%
   select(-species) %>%
-  t() %>%
+  t() %>% 
+  as.data.frame() %>%
+  mutate(stat = row.names(.)) %>%
   write.csv("output/summary_table_smb.csv", row.names = F)
 
 summary_table %>%
@@ -211,6 +213,8 @@ summary_table %>%
   filter(species == "WAE") %>%
   select(-species) %>%
   t() %>%
+  as.data.frame() %>%
+  mutate(stat = row.names(.)) %>%
   write.csv("output/summary_table_wae.csv", row.names = F)
 
 
