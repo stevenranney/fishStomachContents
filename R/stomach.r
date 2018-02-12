@@ -175,7 +175,7 @@ stomach %>%
             mw_wr_wrm_rq = wilcox.test(rel_weight, y = rel_weight_max_rq, data = .)$p.value, 
             mw_wre_wrm_lm = wilcox.test(rel_weight_empty, y = rel_weight_max_lm, data = .)$p.value, 
             mw_wre_wrm_rq = wilcox.test(rel_weight_empty, y = rel_weight_max_rq, data = .)$p.value) %>%
-  write.csv(paste0("output/", "mann_whitney_wr_diffs.csv"), row.names = FALSE)
+  write.csv("output/mann_whitney_wr_diffs.csv", row.names = FALSE)
 
 ################################################################################
 # summary table with Sample size, wilcox.test, and %diff for all species, lake, psd, Wr comb
