@@ -1,6 +1,4 @@
-# fishStomachContents
-
-A work in progres.
+Does the recently-ingested stomach contents of fishes affect their relative weight (*W~r~*)? That's the question.
 
 *** 
 
