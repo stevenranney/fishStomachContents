@@ -1,4 +1,4 @@
-Does the recently-ingested stomach contents of fishes affect their relative weight (*W~r~*)? That's the question.
+Does the recently-ingested stomach contents of fishes affect their relative weight (*W<sub>r</sub>*)? That's the question.
 
 *** 
 
