@@ -13,6 +13,7 @@ library(broom)
 library(tidyr)
 library(purrr)
 library(scales)
+library(ggpubr)
 
 set.seed(256)
 
@@ -52,8 +53,8 @@ max_st_contents_models <-
   filter(st_weight == max(st_weight)) %>%
   group_by(species) %>% 
   do(lm = lm(st_weight ~ weight_empty, data = .), 
-     rq = rq(st_weight ~ weight_empty, data = ., tau = 0.95), 
-     rq_null = rq(st_weight ~ 1, data = ., tau = 0.95)) 
+     rq = rq(st_weight ~ weight_empty, data = ., tau = 0.99), 
+     rq_null = rq(st_weight ~ 1, data = ., tau = 0.99)) 
 
 #Write model parameters and goodness of fit values for both models for both species
 data.frame(species = c(rep("SMB", 2), rep("WAE", 2)), 
@@ -92,19 +93,19 @@ data.frame(species = c(rep("SMB", 2), rep("WAE", 2)),
 # Add estimated max weight stomach contents weight to all individuals
 stomach <- 
   stomach %>%
-  mutate(weight_max_lm = weight_empty + ifelse(species == "SMB", 
-                                               weight_empty %>%
-                                                 apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(lm) %>% pluck(1)),
-                                               weight_empty %>%
-                                                 apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(lm) %>% pluck(1))), 
+  mutate(#weight_max_lm = weight_empty + ifelse(species == "SMB", 
+         #                                       weight_empty %>%
+         #                                         apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(lm) %>% pluck(1)),
+         #                                      weight_empty %>%
+         #                                       apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(lm) %>% pluck(1))), 
          weight_max_rq = weight_empty + ifelse(species == "SMB", 
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(rq) %>% pluck(1)),
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(rq) %>% pluck(1))), 
-         rel_weight_max_lm = ifelse(species == "SMB", 
-                                    weight_max_lm %>% calc_smb_wr(length),
-                                    weight_max_lm %>% calc_wae_wr(length)), 
+         #rel_weight_max_lm = ifelse(species == "SMB", 
+        #                            weight_max_lm %>% calc_smb_wr(length),
+        #                            weight_max_lm %>% calc_wae_wr(length)), 
          rel_weight_max_rq = ifelse(species == "SMB", 
                                     weight_max_rq %>% calc_smb_wr(length),
                                     weight_max_rq %>% calc_wae_wr(length)))
@@ -140,11 +141,11 @@ stomach %>%
               method = "rq",
               se = FALSE,
               formula = y ~ x,
-              method.args = list(tau = 0.95), 
+              method.args = list(tau = 0.99), 
               colour = "black") +
   scale_x_continuous(labels = comma) +
   facet_wrap(~species, scales = "free", labeller = as_labeller(labels)) +
-  scale_linetype_discrete(name = "Model", labels = c("Linear", expression(95^th ~ "Quantile"))) +
+  scale_linetype_discrete(name = "Model", labels = c("Linear", expression(99^th ~ "Quantile"))) +
   theme_bw() +
   theme(legend.position = "bottom", 
         strip.background = element_blank(), 
@@ -171,9 +172,9 @@ stomach %>%
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(mw_wr_wre = wilcox.test(rel_weight, y = rel_weight_empty, data = .)$p.value, 
-            mw_wr_wrm_lm = wilcox.test(rel_weight, y = rel_weight_max_lm, data = .)$p.value, 
+            #mw_wr_wrm_lm = wilcox.test(rel_weight, y = rel_weight_max_lm, data = .)$p.value, 
             mw_wr_wrm_rq = wilcox.test(rel_weight, y = rel_weight_max_rq, data = .)$p.value, 
-            mw_wre_wrm_lm = wilcox.test(rel_weight_empty, y = rel_weight_max_lm, data = .)$p.value, 
+            #mw_wre_wrm_lm = wilcox.test(rel_weight_empty, y = rel_weight_max_lm, data = .)$p.value, 
             mw_wre_wrm_rq = wilcox.test(rel_weight_empty, y = rel_weight_max_rq, data = .)$p.value) %>%
   write.csv("output/mann_whitney_wr_diffs.csv", row.names = FALSE)
 
@@ -185,12 +186,12 @@ summary_table <-
   summarize(n = n(), 
             wre_wr = wilcox.test(rel_weight_empty, rel_weight)$p.value, 
             wre_wr_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight)), 
-            wre_wrmax = wilcox.test(rel_weight_empty, rel_weight_max_lm)$p.value, 
-            wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
+            # wre_wrmax = wilcox.test(rel_weight_empty, rel_weight_max_lm)$p.value, 
+            # wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
             wre_wrmaxQ = wilcox.test(rel_weight_empty, rel_weight_max_rq)$p.value, 
             wre_wrmaxQ_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq)), 
-            wr_wrmax = wilcox.test(rel_weight, rel_weight_max_lm)$p.value, 
-            wr_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
+            # wr_wrmax = wilcox.test(rel_weight, rel_weight_max_lm)$p.value, 
+            # wr_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
             wr_wrmaxQ = wilcox.test(rel_weight, rel_weight_max_rq)$p.value, 
             wr_wrmaxQ_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)))
 
@@ -222,7 +223,7 @@ summary_table %>%
 # Boxplot 
 
 measure_vars <- c("rel_weight", "rel_weight_empty", 
-                  "rel_weight_max_lm", "rel_weight_max_rq")
+                  "rel_weight_max_rq")#, "rel_weight_max_lm")
 
 stomach %>% 
   filter(psd != ">T") %>%
@@ -234,7 +235,7 @@ stomach %>%
   coord_cartesian(ylim = c(50, 180)) +
   scale_fill_grey(name = "Relative weight calculation", 
                   labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
+                             expression(W[rMax]))) + #, expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom", 
         strip.background = element_blank(), 
@@ -249,7 +250,8 @@ ggsave("output/boxplot_fig.tiff")
 # Boxplots by species and population
 
 #SMB
-stomach %>% 
+smb_plot <- 
+  stomach %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
        measure.vars = measure_vars) %>%
@@ -258,9 +260,11 @@ stomach %>%
   geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
+  coord_cartesian(ylim = c(50, 180)) +
+  scale_fill_manual(name = "Relative weight calculation", 
+                    labels = c(expression(W[r]), expression(W[rE]), 
+                               expression(W[rMax])), 
+                    values = gray.colors(3, start = 0.4)) + #, expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom", 
         plot.margin = margin(0,0.1,0,0.1, "cm"),
@@ -269,11 +273,12 @@ stomach %>%
         panel.grid.minor = element_blank()) +
   labs(x = "Length category", y = "Relative weight value")
 
-ggsave("output/smallmouth_wr_plot.png")
-ggsave("output/smallmouth_wr_plot.tiff")
+ggsave("output/smallmouth_wr_plot.png", plot = smb_plot)
+ggsave("output/smallmouth_wr_plot.tiff", plot = smb_plot)
 
 #WAE
-stomach %>% 
+wae_plot <- 
+  stomach %>% 
   filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
        measure.vars = measure_vars) %>%
@@ -282,9 +287,11 @@ stomach %>%
   geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
-  scale_fill_grey(name = "Relative weight calculation", 
+  # coord_cartesian(ylim = c(50, 180)) +
+  scale_fill_manual(name = "Relative weight calculation", 
                   labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]), expression(W[rMaxQ]))) +
+                             expression(W[rMax])), 
+                  values = gray.colors(3, start = 0.4)) +# , expression(W[rMaxQ]))) +
   theme_bw() +
   theme(legend.position = "bottom",
         plot.margin = margin(0,0.1,0,0.1, "cm"),
@@ -293,7 +300,17 @@ stomach %>%
         panel.grid.minor = element_blank()) +
   labs(x = "Length category", y = "Relative weight value")
 
-ggsave("output/walleye_wr_plot.png")
-ggsave("output/walleye_wr_plot.tiff")
+ggsave("output/walleye_wr_plot.png", plot = wae_plot)
+ggsave("output/walleye_wr_plot.tiff", plot = wae_plot)
+
+# Combine both plots into one
+ggarrange(smb_plot + theme(legend.position = "none"), wae_plot,
+          labels = c("A", "B"),
+          ncol = 1, nrow = 2)
+
+ggsave(paste0("output/combine_bw.png"), width = 8.5, height = 11, units = "in")
+ggsave(paste0("output/combine_bw.tiff"), width = 8.5, height = 11, units = "in")
+
+
 
 
