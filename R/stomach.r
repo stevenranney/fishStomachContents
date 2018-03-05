@@ -93,19 +93,11 @@ data.frame(species = c(rep("SMB", 2), rep("WAE", 2)),
 # Add estimated max weight stomach contents weight to all individuals
 stomach <- 
   stomach %>%
-  mutate(#weight_max_lm = weight_empty + ifelse(species == "SMB", 
-         #                                       weight_empty %>%
-         #                                         apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(lm) %>% pluck(1)),
-         #                                      weight_empty %>%
-         #                                       apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(lm) %>% pluck(1))), 
-         weight_max_rq = weight_empty + ifelse(species == "SMB", 
+  mutate(weight_max_rq = weight_empty + ifelse(species == "SMB", 
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "SMB") %>% pull(rq) %>% pluck(1)),
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(rq) %>% pluck(1))), 
-         #rel_weight_max_lm = ifelse(species == "SMB", 
-        #                            weight_max_lm %>% calc_smb_wr(length),
-        #                            weight_max_lm %>% calc_wae_wr(length)), 
          rel_weight_max_rq = ifelse(species == "SMB", 
                                     weight_max_rq %>% calc_smb_wr(length),
                                     weight_max_rq %>% calc_wae_wr(length)))
@@ -194,32 +186,8 @@ summary_table <-
          wre_wrmax = ifelse(wre_wrmax < 0.05, paste0(wre_wrmax, "*"), wre_wrmax %>% as.character()), 
          wr_wrmax = ifelse(wr_wrmax < 0.05, paste0(wr_wrmax, "*"), wr_wrmax %>% as.character()))
 
-# summary_table <- 
-#   data.frame(summary_table[1:3], 
-#              apply(summary_table[4:length(summary_table)], 2, round, 4))
-
 summary_table %>%
   write.csv("output/summary_table.csv", row.names = F)
-
-
-summary_table %>%
-  ungroup() %>%
-  filter(species == "SMB") %>%
-  select(-species) %>%
-  t() %>% 
-  as.data.frame() %>%
-  mutate(stat = row.names(.)) %>%
-  write.csv("output/summary_table_smb.csv", row.names = F)
-
-summary_table %>%
-  ungroup() %>%
-  filter(species == "WAE") %>%
-  select(-species) %>%
-  t() %>%
-  as.data.frame() %>%
-  mutate(stat = row.names(.)) %>%
-  write.csv("output/summary_table_wae.csv", row.names = F)
-
 
 ###############################################################################################
 # Boxplot 
