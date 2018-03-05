@@ -113,16 +113,16 @@ stomach <-
 
 labels <- c("SMB" = "Smallmouth bass", 
             "WAE" = "Walleye", 
-            "Clear" = "Clear Lake", 
+            "Clear" = "Clear", 
             "Enemy.Swim" = "Enemy Swim", 
             "MO.river" = "MO River", 
-            "Pickerel" = "Pickerel Lake", 
-            "Roy" = "Roy Lake", 
-            "Bitter" = "Bitter Lake", 
+            "Pickerel" = "Pickerel", 
+            "Roy" = "Roy", 
+            "Bitter" = "Bitter", 
             "Harlan.res" = "Harlan Reservoir", 
             "Kansas" = "Kansas", 
-            "Pelican" = "Pelican Lake", 
-            "Twin" = "Twin Lakes")
+            "Pelican" = "Pelican", 
+            "Twin" = "Twin")
 
 stomach %>%
   filter(st_weight > 0) %>%
@@ -184,20 +184,22 @@ summary_table <-
   stomach %>%
   group_by(species, psd, lake) %>%
   summarize(n = n(), 
-            wre_wr = wilcox.test(rel_weight_empty, rel_weight)$p.value, 
-            wre_wr_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight)), 
-            # wre_wrmax = wilcox.test(rel_weight_empty, rel_weight_max_lm)$p.value, 
-            # wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
-            wre_wrmaxQ = wilcox.test(rel_weight_empty, rel_weight_max_rq)$p.value, 
-            wre_wrmaxQ_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq)), 
-            # wr_wrmax = wilcox.test(rel_weight, rel_weight_max_lm)$p.value, 
-            # wr_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_lm)),
-            wr_wrmaxQ = wilcox.test(rel_weight, rel_weight_max_rq)$p.value, 
-            wr_wrmaxQ_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)))
+            wre_wr = wilcox.test(rel_weight_empty, rel_weight)$p.value %>% signif(3), 
+            wre_wr_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight)) %>% signif(3), 
+            wre_wrmax = wilcox.test(rel_weight_empty, rel_weight_max_rq)$p.value %>% signif(3), 
+            wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq))%>% signif(3), 
+            wr_wrmax = wilcox.test(rel_weight, rel_weight_max_rq)$p.value %>% signif(3), 
+            wr_wrmax_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)) %>% signif(3)) %>%
+  mutate(wre_wr = ifelse(wre_wr < 0.05, paste0(wre_wr, "*"), wre_wr %>% as.character()), 
+         wre_wrmax = ifelse(wre_wrmax < 0.05, paste0(wre_wrmax, "*"), wre_wrmax %>% as.character()), 
+         wr_wrmax = ifelse(wr_wrmax < 0.05, paste0(wr_wrmax, "*"), wr_wrmax %>% as.character()))
 
-summary_table <- 
-  data.frame(summary_table[1:3], 
-             apply(summary_table[4:length(summary_table)], 2, round, 4))
+# summary_table <- 
+#   data.frame(summary_table[1:3], 
+#              apply(summary_table[4:length(summary_table)], 2, round, 4))
+
+summary_table %>%
+  write.csv("output/summary_table.csv", row.names = F)
 
 
 summary_table %>%
