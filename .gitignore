@@ -3,14 +3,10 @@
 .RData
 .Ruserdata
 
-/data/stomach.txt
-
-output/*.tiff
-
-/manuscript/Ranney et al_stomach contents and Wr_incEdits from Syslo and Zale edits.doc
+scratch_pad.R
 
 /**/archive/
 
-scratch_pad.R
+output/*.tiff
 
 /literature
