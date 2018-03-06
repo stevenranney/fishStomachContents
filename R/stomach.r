@@ -23,14 +23,18 @@ source("R/helper_functions.R")
 wae_length_cat <- c(250, 380, 510, 630, 760)
 smb_length_cat <- c(180, 280, 350, 430, 510)
 
+#Ws parameters
+wae_ws <- c(-5.453, 3.180)
+smb_ws <- c(-5.329, 3.2)
+
 #Read in and set up dataframe, keeping only rows related to SMB and WAE
 stomach <- 
   read.csv("data/stomach_contents.csv", header=T) %>%
   filter(species %in% c("SMB", "WAE")) %>%
   mutate(weight_empty = weight - st_weight, 
          rel_weight = ifelse(species == "SMB", 
-                             calc_smb_wr(weight, length), 
-                             calc_wae_wr(weight, length)), 
+                             calc_rel_weight(weight, length, smb_ws), 
+                             calc_rel_weight(weight, length, wae_ws)), 
          rel_weight_empty = ifelse(species == "SMB", 
                                    weight_empty %>% calc_smb_wr(length),
                                    weight_empty %>% calc_wae_wr(length)), 
@@ -46,6 +50,7 @@ stomach <-
          length_class = length %>% round_down() + 5, 
          lake = lake %>% as.factor())
 
+# Create maximum stomach volume regressions
 max_st_contents_models <- 
   stomach %>%
   filter(st_weight > 0) %>%
