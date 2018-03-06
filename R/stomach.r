@@ -175,7 +175,7 @@ stomach %>%
             mw_wre_wrm_rq = wilcox.test(rel_weight_empty, y = rel_weight_max_rq, data = .)$p.value) %>%
   write.csv("output/mann_whitney_wr_diffs.csv", row.names = FALSE)
 
-################################################################################
+#-------------------------------------------------------------------------------
 # summary table with Sample size, wilcox.test, and %diff for all species, lake, psd, Wr comb
 summary_table <- 
   stomach %>%
@@ -194,7 +194,29 @@ summary_table <-
 summary_table %>%
   write.csv("output/summary_table.csv", row.names = F)
 
-###############################################################################################
+#-------------------------------------------------------------------------------
+# Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
+# to go with the plots
+
+wr_values <- 
+  stomach %>%
+  group_by(species, psd, lake) %>%
+  summarize(wr_first = quantile(rel_weight, probs = 0.25), 
+            wre_first = quantile(rel_weight_empty, probs = 0.25), 
+            wrmax_first = quantile(rel_weight_max_rq, probs = 0.25), 
+            wr_second = median(rel_weight), 
+            wre_second = median(rel_weight_empty), 
+            wrmax_second = median(rel_weight_max_rq),
+            wr_third = quantile(rel_weight, probs = 0.75), 
+            wre_third = quantile(rel_weight_empty, probs = 0.75), 
+            wrmax_third = quantile(rel_weight_max_rq, probs = 0.75))
+
+wr_values[, 1:3] %>%
+  bind_cols(round(wr_values[,4:length(wr_values)], 0)) %>%
+  write.csv("output/summary_iqrange.csv", row.names = F)
+
+
+#-------------------------------------------------------------------------------
 # Boxplot 
 
 measure_vars <- c("rel_weight", "rel_weight_empty", 
@@ -208,6 +230,7 @@ stomach %>%
   geom_boxplot(outlier.colour = NA) + #outliers not displayed
   facet_wrap(~species, scales = "free_y", labeller = as_labeller(labels)) +
   coord_cartesian(ylim = c(50, 180)) +
+  scale_y_continuous(breaks = seq(60, 180, by = 20)) +
   scale_fill_grey(name = "Relative weight calculation", 
                   labels = c(expression(W[r]), expression(W[rE]), 
                              expression(W[rMax]))) + #, expression(W[rMaxQ]))) +
@@ -236,6 +259,7 @@ smb_plot <-
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
   coord_cartesian(ylim = c(50, 180)) +
+  scale_y_continuous(breaks = seq(60, 180, by = 20)) +
   scale_fill_manual(name = "Relative weight calculation", 
                     labels = c(expression(W[r]), expression(W[rE]), 
                                expression(W[rMax])), 
