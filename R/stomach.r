@@ -198,22 +198,16 @@ summary_table %>%
 # Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
 # to go with the plots
 
-wr_values <- 
+wr_value_diffs <- 
   stomach %>%
   group_by(species, psd, lake) %>%
-  summarize(wr_first = quantile(rel_weight, probs = 0.25), 
-            wre_first = quantile(rel_weight_empty, probs = 0.25), 
-            wrmax_first = quantile(rel_weight_max_rq, probs = 0.25), 
-            wr_second = median(rel_weight), 
-            wre_second = median(rel_weight_empty), 
-            wrmax_second = median(rel_weight_max_rq),
-            wr_third = quantile(rel_weight, probs = 0.75), 
-            wre_third = quantile(rel_weight_empty, probs = 0.75), 
-            wrmax_third = quantile(rel_weight_max_rq, probs = 0.75))
+  summarize(wre_wr = median(rel_weight_empty) - median(rel_weight), 
+            wre_wrmax = median(rel_weight_empty) - median(rel_weight_max_rq), 
+            wr_wrmax = median(rel_weight) - median(rel_weight_max_rq))
 
-wr_values[, 1:3] %>%
-  bind_cols(round(wr_values[,4:length(wr_values)], 0)) %>%
-  write.csv("output/summary_iqrange.csv", row.names = F)
+wr_value_diffs[, 1:3] %>%
+  bind_cols(round(wr_value_diffs[,4:ncol(wr_value_diffs)], 0)) %>%
+  write.csv("output/rel_weight_diffs.csv", row.names = F)
 
 
 #-------------------------------------------------------------------------------
