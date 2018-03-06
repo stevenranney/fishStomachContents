@@ -121,6 +121,7 @@ labels <- c("SMB" = "Smallmouth bass",
             "Pelican" = "Pelican", 
             "Twin" = "Twin")
 
+#Create figure of max stomach value individuals and models
 stomach %>%
   filter(st_weight > 0) %>%
   group_by(species, lake, psd) %>%
@@ -211,35 +212,10 @@ wr_value_diffs[, 1:3] %>%
 
 
 #-------------------------------------------------------------------------------
-# Boxplot 
+# Boxplots by species and population
 
 measure_vars <- c("rel_weight", "rel_weight_empty", 
-                  "rel_weight_max_rq")#, "rel_weight_max_lm")
-
-stomach %>% 
-  filter(psd != ">T") %>%
-  melt(id.vars = c("species", "lake", "psd"), 
-       measure.vars = measure_vars) %>%
-  ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
-  facet_wrap(~species, scales = "free_y", labeller = as_labeller(labels)) +
-  coord_cartesian(ylim = c(50, 180)) +
-  scale_y_continuous(breaks = seq(60, 180, by = 20)) +
-  scale_fill_grey(name = "Relative weight calculation", 
-                  labels = c(expression(W[r]), expression(W[rE]), 
-                             expression(W[rMax]))) + #, expression(W[rMaxQ]))) +
-  theme_bw() +
-  theme(legend.position = "bottom", 
-        strip.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  labs(x = "Length category", y = "Relative weight value")
-
-ggsave("output/boxplot_fig.png")
-ggsave("output/boxplot_fig.tiff")
-
-###############################################################################################
-# Boxplots by species and population
+                  "rel_weight_max_rq")
 
 #SMB
 smb_plot <- 
@@ -249,7 +225,7 @@ smb_plot <-
        measure.vars = measure_vars) %>%
   filter(species == "SMB") %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  geom_boxplot(outlier.colour = NA) +
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
   coord_cartesian(ylim = c(50, 180)) +
@@ -257,7 +233,7 @@ smb_plot <-
   scale_fill_manual(name = "Relative weight calculation", 
                     labels = c(expression(W[r]), expression(W[rE]), 
                                expression(W[rMax])), 
-                    values = gray.colors(3, start = 0.4)) + #, expression(W[rMaxQ]))) +
+                    values = gray.colors(3, start = 0.4)) +
   theme_bw() +
   theme(legend.position = "bottom", 
         plot.margin = margin(0,0.1,0,0.1, "cm"),
@@ -277,14 +253,13 @@ wae_plot <-
        measure.vars = measure_vars) %>%
   filter(species == "WAE") %>%
   ggplot(aes(x = psd, y = value, fill = variable)) +
-  geom_boxplot(outlier.colour = NA) + #outliers not displayed
+  geom_boxplot(outlier.colour = NA) +
   facet_wrap(~lake, scales = "free", labeller = as_labeller(labels), 
              drop = TRUE) +
-  # coord_cartesian(ylim = c(50, 180)) +
   scale_fill_manual(name = "Relative weight calculation", 
                   labels = c(expression(W[r]), expression(W[rE]), 
                              expression(W[rMax])), 
-                  values = gray.colors(3, start = 0.4)) +# , expression(W[rMaxQ]))) +
+                  values = gray.colors(3, start = 0.4)) +
   theme_bw() +
   theme(legend.position = "bottom",
         plot.margin = margin(0,0.1,0,0.1, "cm"),
