@@ -207,7 +207,7 @@ summary_table %>%
 #-------------------------------------------------------------------------------
 # Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
 # to go with the plots; not included in the manuscript, but used as a reference
-# while writing (values are also included in Figure 2)
+# while writing (values are imaged in Figure 2)
 
 wr_value_diffs <- 
   stomach %>%
@@ -279,7 +279,7 @@ wae_plot <-
 
 save_as_png_tiff("output/walleye_wr_plot")
 
-# Combine both plots into one; outputs in Figure 2
+# Combine both plots into one; outputs Figure 2
 ggarrange(smb_plot + theme(legend.position = "none"), wae_plot,
           labels = c("A", "B"),
           ncol = 1, nrow = 2)
