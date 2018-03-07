@@ -19,7 +19,10 @@ set.seed(256)
 
 source("R/helper_functions.R")
 
-#From Gabelhouse
+#-------------------------------------------------------------------------------
+#Data handling
+
+#Length category boundaries from Gabelhouse
 wae_length_cat <- c(250, 380, 510, 630, 760)
 smb_length_cat <- c(180, 280, 350, 430, 510)
 
@@ -33,11 +36,11 @@ stomach <-
   filter(species %in% c("SMB", "WAE")) %>%
   mutate(weight_empty = weight - st_weight, 
          rel_weight = ifelse(species == "SMB", 
-                             calc_rel_weight(weight, length, smb_ws), 
-                             calc_rel_weight(weight, length, wae_ws)), 
+                             weight %>% calc_rel_weight(length, smb_ws), 
+                             weight %>% calc_rel_weight(length, wae_ws)), 
          rel_weight_empty = ifelse(species == "SMB", 
-                                   weight_empty %>% calc_smb_wr(length),
-                                   weight_empty %>% calc_wae_wr(length)), 
+                                   weight_empty %>% calc_rel_weight(length, smb_ws),
+                                   weight_empty %>% calc_rel_weight(length, wae_ws)), 
          psd = ifelse(species == "SMB", 
                       assign_length_cat(length, smb_length_cat), 
                       assign_length_cat(length, wae_length_cat)), 
@@ -50,6 +53,9 @@ stomach <-
          length_class = length %>% round_down() + 5, 
          lake = lake %>% as.factor())
 
+#-------------------------------------------------------------------------------
+#Modeling maximum stomach volume
+
 # Create maximum stomach volume regressions
 max_st_contents_models <- 
   stomach %>%
@@ -61,7 +67,8 @@ max_st_contents_models <-
      rq = rq(st_weight ~ weight_empty, data = ., tau = 0.99), 
      rq_null = rq(st_weight ~ 1, data = ., tau = 0.99)) 
 
-#Write model parameters and goodness of fit values for both models for both species
+#Write model parameters and goodness of fit values for both rq() and lm() models 
+# for both species
 data.frame(species = c(rep("SMB", 2), rep("WAE", 2)), 
            model = c(rep(c("lm", "rq"), 2)), 
            intercept = c((max_st_contents_models %>% filter(species == "SMB") %>% 
@@ -104,9 +111,8 @@ stomach <-
                                                weight_empty %>%
                                                  apply_lm(max_st_contents_models %>% filter(species == "WAE") %>% pull(rq) %>% pluck(1))), 
          rel_weight_max_rq = ifelse(species == "SMB", 
-                                    weight_max_rq %>% calc_smb_wr(length),
-                                    weight_max_rq %>% calc_wae_wr(length)))
-
+                                    weight_max_rq %>% calc_rel_weight(length, smb_ws),
+                                    weight_max_rq %>% calc_rel_weight(length, wae_ws)))
 
 labels <- c("SMB" = "Smallmouth bass", 
             "WAE" = "Walleye", 
@@ -153,11 +159,14 @@ stomach %>%
 ggsave("output/model_figure.png")
 ggsave("output/model_figure.tiff")
 
+#-------------------------------------------------------------------------------
+# Remove combinations of species x lake x psd where sample size < 3
+
 stomach <- 
   stomach %>%
   group_by(species, lake, psd) %>%
   mutate(n = n()) %>%
-  filter(n >= 3) # Remove combinations of species x lake x psd where sample size < 3
+  filter(n >= 3) 
 
 # Determine if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
@@ -197,7 +206,8 @@ summary_table %>%
 
 #-------------------------------------------------------------------------------
 # Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
-# to go with the plots
+# to go with the plots; not included in the manuscript, but used as a reference
+# while writing (values are also included in Figure 2)
 
 wr_value_diffs <- 
   stomach %>%
@@ -242,8 +252,7 @@ smb_plot <-
         panel.grid.minor = element_blank()) +
   labs(x = "Length category", y = "Relative weight value")
 
-ggsave("output/smallmouth_wr_plot.png", plot = smb_plot)
-ggsave("output/smallmouth_wr_plot.tiff", plot = smb_plot)
+save_as_png_tiff("output/smallmouth_wr_plot")
 
 #WAE
 wae_plot <- 
@@ -268,16 +277,14 @@ wae_plot <-
         panel.grid.minor = element_blank()) +
   labs(x = "Length category", y = "Relative weight value")
 
-ggsave("output/walleye_wr_plot.png", plot = wae_plot)
-ggsave("output/walleye_wr_plot.tiff", plot = wae_plot)
+save_as_png_tiff("output/walleye_wr_plot")
 
-# Combine both plots into one
+# Combine both plots into one; outputs in Figure 2
 ggarrange(smb_plot + theme(legend.position = "none"), wae_plot,
           labels = c("A", "B"),
           ncol = 1, nrow = 2)
 
-ggsave(paste0("output/combine_bw.png"), width = 8.5, height = 11, units = "in")
-ggsave(paste0("output/combine_bw.tiff"), width = 8.5, height = 11, units = "in")
+save_as_png_tiff("output/combine_bw", width = 8.5, height = 11, units = "in")
 
 
 

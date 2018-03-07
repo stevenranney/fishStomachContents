@@ -44,3 +44,11 @@ calc_perc_diff <- function(x, y){
   
   ((x-y)/y)*100
 }
+
+#Write two figures at once 
+save_as_png_tiff <- function(filepath, plot = last_plot(), width = NA, height = NA, units = c("in", "cm", "mm")){
+  
+  ggsave(paste0(filepath, ".png"), plot = plot, width = width, height = height, units = "in")
+  ggsave(paste0(filepath, ".tiff"), plot = plot, width = height, height = height, units = "in")
+
+  }
