@@ -6,14 +6,12 @@
 ################################################################################ 
 
 library(dplyr)
+library(purrr) #pluck() fx only
 library(ggplot2)
 library(quantreg)
-library(reshape2)
-library(broom)
-library(tidyr)
-library(purrr)
-library(scales)
-library(ggpubr)
+library(reshape2) #melt() fx
+library(scales) #useful for plotting
+library(ggpubr) #combining two ggplots into one
 
 set.seed(256)
 
@@ -156,8 +154,9 @@ stomach %>%
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
-ggsave("output/model_figure.png")
-ggsave("output/model_figure.tiff")
+save_as_png_tiff("output/model_figure")
+# ggsave("output/model_figure.png")
+# ggsave("output/model_figure.tiff")
 
 #-------------------------------------------------------------------------------
 # Remove combinations of species x lake x psd where sample size < 3
@@ -179,9 +178,7 @@ stomach %>%
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(mw_wr_wre = wilcox.test(rel_weight, y = rel_weight_empty, data = .)$p.value, 
-            #mw_wr_wrm_lm = wilcox.test(rel_weight, y = rel_weight_max_lm, data = .)$p.value, 
             mw_wr_wrm_rq = wilcox.test(rel_weight, y = rel_weight_max_rq, data = .)$p.value, 
-            #mw_wre_wrm_lm = wilcox.test(rel_weight_empty, y = rel_weight_max_lm, data = .)$p.value, 
             mw_wre_wrm_rq = wilcox.test(rel_weight_empty, y = rel_weight_max_rq, data = .)$p.value) %>%
   write.csv("output/mann_whitney_wr_diffs.csv", row.names = FALSE)
 
