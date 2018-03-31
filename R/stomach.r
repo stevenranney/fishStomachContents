@@ -14,6 +14,7 @@ library(scales) #useful for plotting
 library(ggpubr) #combining two ggplots into one
 
 set.seed(256)
+options(scipen=999) #turn off scientific notation
 
 source("R/helper_functions.R")
 
@@ -59,11 +60,11 @@ max_st_contents_models <-
   stomach %>%
   filter(st_weight > 0) %>%
   group_by(species, lake, psd) %>%
-  filter(st_weight == max(st_weight)) %>%
+#  filter(st_weight == max(st_weight)) %>%
   group_by(species) %>% 
   do(lm = lm(st_weight ~ weight_empty, data = .), 
-     rq = rq(st_weight ~ weight_empty, data = ., tau = 0.99), 
-     rq_null = rq(st_weight ~ 1, data = ., tau = 0.99)) 
+     rq = rq(st_weight ~ weight_empty, data = ., tau = 1.0), 
+     rq_null = rq(st_weight ~ 1, data = ., tau = 1.0)) 
 
 #Write model parameters and goodness of fit values for both rq() and lm() models 
 # for both species
@@ -98,7 +99,7 @@ data.frame(species = c(rep("SMB", 2), rep("WAE", 2)),
                           pull(rq) %>% pluck(1), 
                         max_st_contents_models %>% filter(species == "WAE") %>% 
                           pull(rq_null) %>% pluck(1)))) %>%
-  write.csv("output/model_params_and_gof_values.csv", row.names = FALSE)
+  write.csv(paste("output/", Sys.Date(), "model_params_and_gof_values.csv"), row.names = FALSE)
 
 # Add estimated max weight stomach contents weight to all individuals
 stomach <- 
@@ -129,10 +130,10 @@ labels <- c("SMB" = "Smallmouth bass",
 stomach %>%
   filter(st_weight > 0) %>%
   group_by(species, lake, psd) %>%
-  filter(st_weight == max(st_weight)) %>%
+#  filter(st_weight == max(st_weight)) %>%
   ggplot(aes(x = weight_empty, y = st_weight)) +
-  geom_point() +
-  labs(x = expression("Total weight minus stomach contents (" ~ italic(W)[E] ~ "; g)"), 
+  geom_point(alpha = 0.25) +
+  labs(x = expression("Empty weight (" ~ italic(W)[E] ~ "; g)"), 
        y = expression("Stomach contents weight (" ~ italic(W)[St] ~ "; g)")) +
   geom_smooth(aes(linetype = "1"), 
               method = "lm",
@@ -143,11 +144,11 @@ stomach %>%
               method = "rq",
               se = FALSE,
               formula = y ~ x,
-              method.args = list(tau = 0.99), 
+              method.args = list(tau = 1.00), 
               colour = "black") +
   scale_x_continuous(labels = comma) +
   facet_wrap(~species, scales = "free", labeller = as_labeller(labels)) +
-  scale_linetype_discrete(name = "Model", labels = c("Linear", expression(99^th ~ "Quantile"))) +
+  scale_linetype_discrete(name = "Model", labels = c("Linear", expression(100^th ~ "Quantile"))) +
   theme_bw() +
   theme(legend.position = "bottom", 
         strip.background = element_blank(), 
@@ -155,17 +156,23 @@ stomach %>%
         panel.grid.minor = element_blank())
 
 save_as_png_tiff("output/model_figure")
-# ggsave("output/model_figure.png")
-# ggsave("output/model_figure.tiff")
 
 #-------------------------------------------------------------------------------
-# Remove combinations of species x lake x psd where sample size < 3
+# Remove combinations of species x lake x psd where sample size < 4
+
+#Write the fish that are eliminated from analyses
+stomach %>%
+  group_by(species, lake, psd) %>%
+  mutate(n = n()) %>%
+  filter(n < 4) %>%
+  summarize(tot_fish = n()) %>%
+  write.csv("output/fish_removed_n_less_than_4.csv", row.names = FALSE)
 
 stomach <- 
   stomach %>%
   group_by(species, lake, psd) %>%
   mutate(n = n()) %>%
-  filter(n >= 3) 
+  filter(n >= 4) 
 
 # Determine if within species within population within psd rel_weight values are normally distributed
 stomach %>% 
@@ -183,7 +190,7 @@ stomach %>%
   write.csv("output/mann_whitney_wr_diffs.csv", row.names = FALSE)
 
 #-------------------------------------------------------------------------------
-# summary table with Sample size, wilcox.test, and %diff for all species, lake, psd, Wr comb
+# summary table with Sample size, wilcox.test, and median %diff for all species, lake, psd, Wr comb
 summary_table <- 
   stomach %>%
   group_by(species, psd, lake) %>%
@@ -199,7 +206,7 @@ summary_table <-
          wr_wrmax = ifelse(wr_wrmax < 0.05, paste0(wr_wrmax, "*"), wr_wrmax %>% as.character()))
 
 summary_table %>%
-  write.csv("output/summary_table.csv", row.names = F)
+  write.csv(paste0("output/", Sys.Date(), "_summary_table.csv"), row.names = F)
 
 #-------------------------------------------------------------------------------
 # Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
@@ -215,7 +222,7 @@ wr_value_diffs <-
 
 wr_value_diffs[, 1:3] %>%
   bind_cols(round(wr_value_diffs[,4:ncol(wr_value_diffs)], 0)) %>%
-  write.csv("output/rel_weight_diffs.csv", row.names = F)
+  write.csv(paste0("output/", Sys.Date(), "_rel_weight_diffs.csv"), row.names = F)
 
 
 #-------------------------------------------------------------------------------
@@ -227,7 +234,6 @@ measure_vars <- c("rel_weight", "rel_weight_empty",
 #SMB
 smb_plot <- 
   stomach %>% 
-  filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
        measure.vars = measure_vars) %>%
   filter(species == "SMB") %>%
@@ -243,7 +249,7 @@ smb_plot <-
                     values = gray.colors(3, start = 0.4)) +
   theme_bw() +
   theme(legend.position = "bottom", 
-        plot.margin = margin(0,0.1,0,0.1, "cm"),
+        plot.margin = margin(0,0.1,0.1,0.1, "cm"),
         strip.background = element_blank(), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank()) +
@@ -254,7 +260,6 @@ save_as_png_tiff("output/smallmouth_wr_plot")
 #WAE
 wae_plot <- 
   stomach %>% 
-  filter(psd != ">T") %>%
   melt(id.vars = c("species", "lake", "psd"), 
        measure.vars = measure_vars) %>%
   filter(species == "WAE") %>%
@@ -277,7 +282,8 @@ wae_plot <-
 save_as_png_tiff("output/walleye_wr_plot")
 
 # Combine both plots into one; outputs Figure 2
-ggarrange(smb_plot + theme(legend.position = "none"), wae_plot,
+ggarrange(smb_plot + theme(legend.position = "none", 
+                           axis.title.x=element_blank()), wae_plot,
           labels = c("A", "B"),
           ncol = 1, nrow = 2)
 
