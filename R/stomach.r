@@ -98,7 +98,7 @@ data.frame(species = c(rep("SMB", 2), rep("WAE", 2)),
                           pull(rq) %>% pluck(1), 
                         max_st_contents_models %>% filter(species == "WAE") %>% 
                           pull(rq_null) %>% pluck(1)))) %>%
-  write.csv(paste("output/", Sys.Date(), "model_params_and_gof_values.csv"), row.names = FALSE)
+  write.csv("output/model_params_and_gof_values.csv", row.names = FALSE)
 
 # Add estimated max weight stomach contents weight to all individuals
 stomach <- 
@@ -176,7 +176,7 @@ stomach <-
 stomach %>% 
   group_by(species, lake, psd) %>% 
   summarize(norm_test_pvalue = ifelse(length(rel_weight) > 3, shapiro.test(rel_weight)$p.value, NA)) %>%
-  write.csv(paste0("output/", "shaprio_test_rel_weight_by_sp_lake_psd.csv"), row.names = FALSE)
+  write.csv("output/shaprio_test_rel_weight_by_sp_lake_psd.csv", row.names = FALSE)
 
 # Determine if within species within population within psd rel_weight values 
 # are significantly different from rel_weight_empty or rel_weight_max values
@@ -189,6 +189,7 @@ stomach %>%
 
 #-------------------------------------------------------------------------------
 # summary table with Sample size, wilcox.test, and median %diff for all species, lake, psd, Wr comb
+# If calculated p-value is < 0.0005, then just change to 0.000
 summary_table <- 
   stomach %>%
   group_by(species, psd, lake) %>%
@@ -199,12 +200,15 @@ summary_table <-
             wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq))%>% signif(3), 
             wr_wrmax = wilcox.test(rel_weight, rel_weight_max_rq)$p.value %>% signif(3), 
             wr_wrmax_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)) %>% signif(3)) %>%
-  mutate(wre_wr = ifelse(wre_wr < 0.05, paste0(wre_wr, "*"), wre_wr %>% as.character()), 
+  mutate(wre_wr = ifelse(wre_wr < 0.0005, 0.0000, wre_wr), 
+         wre_wrmax = ifelse(wre_wrmax < 0.0005, 0.0000, wre_wrmax), 
+         wr_wrmax = ifelse(wr_wrmax < 0.0005, 0.0000, wr_wrmax), 
+         wre_wr = ifelse(wre_wr < 0.05, paste0(wre_wr, "*"), wre_wr %>% as.character()), 
          wre_wrmax = ifelse(wre_wrmax < 0.05, paste0(wre_wrmax, "*"), wre_wrmax %>% as.character()), 
          wr_wrmax = ifelse(wr_wrmax < 0.05, paste0(wr_wrmax, "*"), wr_wrmax %>% as.character()))
 
 summary_table %>%
-  write.csv(paste0("output/", Sys.Date(), "_summary_table.csv"), row.names = F)
+  write.csv("output/summary_table.csv", row.names = F)
 
 #-------------------------------------------------------------------------------
 # Summary table of 25th, 50th, and 75th quantile (first, second, and third quartiles) 
@@ -220,7 +224,7 @@ wr_value_diffs <-
 
 wr_value_diffs[, 1:3] %>%
   bind_cols(round(wr_value_diffs[,4:ncol(wr_value_diffs)], 0)) %>%
-  write.csv(paste0("output/", Sys.Date(), "_rel_weight_diffs.csv"), row.names = F)
+  write.csv("output/rel_weight_diffs.csv", row.names = F)
 
 
 #-------------------------------------------------------------------------------
