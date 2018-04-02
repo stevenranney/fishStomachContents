@@ -60,7 +60,6 @@ max_st_contents_models <-
   stomach %>%
   filter(st_weight > 0) %>%
   group_by(species, lake, psd) %>%
-#  filter(st_weight == max(st_weight)) %>%
   group_by(species) %>% 
   do(lm = lm(st_weight ~ weight_empty, data = .), 
      rq = rq(st_weight ~ weight_empty, data = ., tau = 1.0), 
@@ -130,7 +129,6 @@ labels <- c("SMB" = "Smallmouth bass",
 stomach %>%
   filter(st_weight > 0) %>%
   group_by(species, lake, psd) %>%
-#  filter(st_weight == max(st_weight)) %>%
   ggplot(aes(x = weight_empty, y = st_weight)) +
   geom_point(alpha = 0.25) +
   labs(x = expression("Empty weight (" ~ italic(W)[E] ~ "; g)"), 
@@ -144,7 +142,7 @@ stomach %>%
               method = "rq",
               se = FALSE,
               formula = y ~ x,
-              method.args = list(tau = 1.00), 
+              method.args = list(tau = 1.0), 
               colour = "black") +
   scale_x_continuous(labels = comma) +
   facet_wrap(~species, scales = "free", labeller = as_labeller(labels)) +
