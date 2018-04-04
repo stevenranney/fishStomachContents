@@ -14,7 +14,7 @@ library(scales) #useful for plotting
 library(ggpubr) #combining two ggplots into one
 
 set.seed(256)
-options(scipen=999) #turn off scientific notation
+#options(scipen=999) #turn off scientific notation
 
 source("R/helper_functions.R")
 
@@ -189,7 +189,7 @@ stomach %>%
 
 #-------------------------------------------------------------------------------
 # summary table with Sample size, wilcox.test, and median %diff for all species, lake, psd, Wr comb
-# If calculated p-value is < 0.0005, then just change to 0.000
+# If calculated p-value is < 0.00005, then just change to 0.00005
 summary_table <- 
   stomach %>%
   group_by(species, psd, lake) %>%
@@ -200,9 +200,9 @@ summary_table <-
             wre_wrmax_diff = calc_perc_diff(median(rel_weight_empty), median(rel_weight_max_rq))%>% signif(3), 
             wr_wrmax = wilcox.test(rel_weight, rel_weight_max_rq)$p.value %>% signif(3), 
             wr_wrmax_diff = calc_perc_diff(median(rel_weight), median(rel_weight_max_rq)) %>% signif(3)) %>%
-  mutate(wre_wr = ifelse(wre_wr < 0.0005, 0.0000, wre_wr), 
-         wre_wrmax = ifelse(wre_wrmax < 0.0005, 0.0000, wre_wrmax), 
-         wr_wrmax = ifelse(wr_wrmax < 0.0005, 0.0000, wr_wrmax), 
+  mutate(wre_wr = ifelse(wre_wr < 0.00005, 0.00005, wre_wr), 
+         wre_wrmax = ifelse(wre_wrmax < 0.00005, 0.00005, wre_wrmax), 
+         wr_wrmax = ifelse(wr_wrmax < 0.00005, 0.00005, wr_wrmax), 
          wre_wr = ifelse(wre_wr < 0.05, paste0(wre_wr, "*"), wre_wr %>% as.character()), 
          wre_wrmax = ifelse(wre_wrmax < 0.05, paste0(wre_wrmax, "*"), wre_wrmax %>% as.character()), 
          wr_wrmax = ifelse(wr_wrmax < 0.05, paste0(wr_wrmax, "*"), wr_wrmax %>% as.character()))
