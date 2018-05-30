@@ -4,6 +4,8 @@ Does the recently-ingested stomach contents of fishes affect their relative weig
 
 # NEWS
 
+* 2018-05-30 - Back from A. Zale. Might be a while before I get the chance to get back to this, probably not until mid-June, but *maybe* next weekend.
+
 * 2018-03-09 - Manuscript sent to coauthors for review
 
 * 2018-02-11 - All analyses are self-contained in the `stomach.R` file. The files `smallmouth.R` and `walleye.R` are gone. `source()`ing the `stomach.R` file will run all analyses and create output in a users `output` directory, provided they've created one.
