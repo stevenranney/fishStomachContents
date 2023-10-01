@@ -1,3 +1,5 @@
+[View on github.](https://github.com/stevenranney/fishStomachContents)
+
 Does the recently-ingested stomach contents of fishes affect their relative weight (*W<sub>r</sub>*)? That's the question.
 
 *** 
